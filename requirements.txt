@@ -1,0 +1,4 @@
+environs
+pyjwt
+requests
+telethon

@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  script:
+    build: .
+    volumes:
+      - .:/opt/app
+    environment:
+      - DEBUG=true
+      - ENVIRONMENT=development
+      - PYTHONUNBUFFERED=1
+      - EMAIL=${EMAIL}
+      - PASSWORD=${PASSWORD}
+    restart: always

@@ -2,6 +2,8 @@ import asyncio
 import datetime as dt
 import json
 import os
+import signal
+import sys
 import threading
 import time
 
@@ -127,8 +129,15 @@ def get_new_token():
 
 
 def main():
+    def handle_sigterm(*args):
+        raise KeyboardInterrupt()
+
+    signal.signal(signal.SIGTERM, handle_sigterm)
+
     if os.path.exists('auth.json'):
         os.remove('auth.json')
+
+    stop_event = threading.Event()
 
     async def check_loop():
         session = os.path.join(os.path.dirname(__file__), 'bot-1')
@@ -144,9 +153,21 @@ def main():
 
             await asyncio.sleep(30)
 
-    loop = asyncio.new_event_loop()
-    loop.create_task(check_loop())
-    thread = threading.Thread(target=loop.run_forever)
+    def run_check_loop():
+        loop = asyncio.new_event_loop()
+        loop.create_task(check_loop())
+        asyncio.set_event_loop(loop)
+
+        async def check_loop_stop():
+            while True:
+                if stop_event.is_set():
+                    break
+
+                await asyncio.sleep(1)
+
+        asyncio.run(check_loop_stop())
+
+    thread = threading.Thread(target=run_check_loop)
     thread.start()
     time.sleep(1)  # Sleep to have enough time to get current auth in thread
 
@@ -164,6 +185,7 @@ def main():
         try:
             check_shoeboxes(bot, cache['shoeboxes'])
         except Exception as e:
+            stop_event.set()
             print(e)
             break
 
@@ -174,4 +196,10 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        try:
+            sys.exit(0)
+        except SystemExit:
+            os._exit(0)

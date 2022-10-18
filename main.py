@@ -49,21 +49,39 @@ def check_shoeboxes(bot, cur_items):
 
     new_items.sort(key=lambda x: x['priceFitfi'])
 
-    for item in new_items:
-        if item['priceFitfi'] <= ENV.int('MAX_PRICE'):
-            data = {'params':{'sellingId': item['sellingId']}}
+    def is_allowed(item):
+        """
+        1 - Coach
+        2 - Walker
+        3 - Hiker
+        4 - Racer
+        """
+        if item['priceFitfi'] > ENV.int('MAX_PRICE'):
+            return False
 
-            try:
-                resp = requests.post('https://prd-api.step.app/game/1/market/buyShoeBox', headers=get_headers(), json=data, verify=False, timeout=2)
-                resp.raise_for_status()
-            except Exception as e:
-                print(e)
-            else:
-                print('Buy')
-                print(item)
-                print(resp.status_code)
-                print(resp.text)
-                print('---')
+        if item['staticSneakerTypeId'] == 4 and item['staticShoeBoxRarityId'] == 1 and item['priceFitfi'] > 4000:
+            # Aint buying common racer with price over 4000 FI
+            return False
+
+        return True
+
+    for item in new_items:
+        if not is_allowed(item):
+            continue
+
+        data = {'params':{'sellingId': item['sellingId']}}
+
+        try:
+            resp = requests.post('https://prd-api.step.app/game/1/market/buyShoeBox', headers=get_headers(), json=data, verify=False, timeout=2)
+            resp.raise_for_status()
+        except Exception as e:
+            print(e)
+        else:
+            print('Buy')
+            print(item)
+            print(resp.status_code)
+            print(resp.text)
+            print('---')
 
     if ENV.bool('NEW_ITEMS_PUSH', False):
         message = '\n'.join(f'{i["priceFitfi"]} FI' for i in new_items)

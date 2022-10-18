@@ -12,4 +12,5 @@ services:
       - EMAIL=${EMAIL}
       - PASSWORD=${PASSWORD}
       - MAX_PRICE=7000
+      - NEW_ITEMS_PUSH=${NEW_ITEMS_PUSH}
     restart: always

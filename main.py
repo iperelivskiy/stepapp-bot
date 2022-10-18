@@ -64,8 +64,9 @@ def check_shoeboxes(bot, cur_items):
                 print(resp.text)
                 print('---')
 
-    message = '\n'.join(f'{i["priceFitfi"]} FI' for i in new_items)
-    bot.send_message(TELEGRAM_CHANNEL_ID, f'New shoeboxes:\n{message}')
+    if ENV.bool('NEW_ITEMS_PUSH', False):
+        message = '\n'.join(f'{i["priceFitfi"]} FI' for i in new_items)
+        bot.send_message(TELEGRAM_CHANNEL_ID, f'New shoeboxes:\n{message}')
 
 
 async def check_sellings(bot, cur_sellings):

@@ -76,6 +76,9 @@ async def check_sellings(bot, cur_sellings):
     try:
         resp.raise_for_status()
         sellings = len(resp.json()['result']['changes']['dynUsers']['updated'][0]['sneakerSellings']['updated'])
+    except TypeError:
+        # No shoes left for sale
+        sellings = 0
     except Exception:
         print(resp.text)
         raise

@@ -11,4 +11,5 @@ services:
       - PYTHONUNBUFFERED=1
       - EMAIL=${EMAIL}
       - PASSWORD=${PASSWORD}
+      - MAX_PRICE=7000
     restart: always

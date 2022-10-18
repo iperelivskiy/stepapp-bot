@@ -1,7 +1,8 @@
+import asyncio
 import datetime as dt
 import json
 import os
-from tarfile import ENCODING
+import threading
 import time
 
 import jwt
@@ -17,15 +18,9 @@ TELEGRAM_BOT_TOKEN = '5600428438:AAFgSPZWK18FSmzMhAHRoeOBhhiy967hDhU'
 TELEGRAM_CHANNEL_ID = -1001807612189
 
 
-def check():
-    headers = {
-        'Authorization': f'Bearer {get_token()}',
-        'User-Agent': 'stepapp/1.0 (com.step.stepapp-ios; build:25; iOS 15.7.0) Alamofire/5.6.1',
-        'Accept-Encoding': 'br;q=1.0, gzip;q=0.9, deflate;q=0.8',
-    }
-
+def check_shoeboxes(bot, cur_items):
     data = {"params":{"skip":0,"sortOrder":"latest","take":10,"network":"avalanche"}}
-    resp = requests.post('https://prd-api.step.app/market/selling/shoeBoxes', headers=headers, json=data, verify=False, timeout=5)
+    resp = requests.post('https://prd-api.step.app/market/selling/shoeBoxes', headers=get_headers(), json=data, verify=False, timeout=2)
 
     if resp.status_code == 401:
         get_new_token()
@@ -41,16 +36,53 @@ def check():
     new_items = []
 
     for item in items:
-        if str(item['sellingId']) in _CACHE:
+        if str(item['sellingId']) in cur_items:
             print('In cache', item)
         else:
             new_items.append(item)
+            cur_items[str(item['sellingId'])] = item
 
-    if new_items:
-        new_items.sort(key=lambda x: x['priceFitfi'])
-        cache(new_items)
-        buy(new_items)
-        push(new_items)
+    if not new_items:
+        return
+
+    new_items.sort(key=lambda x: x['priceFitfi'])
+
+    for item in new_items:
+        if item['priceFitfi'] <= ENV.int('MAX_PRICE'):
+            data = {'params':{'sellingId': item['sellingId']}}
+            resp = requests.post('https://prd-api.step.app/game/1/market/buyShoeBox', headers=get_headers(), json=data, verify=False)
+            print('Buy')
+            print(item)
+            print(resp.status_code)
+            print(resp.text)
+            print('---')
+
+    message = '\n'.join(f'{i["priceFitfi"]} FI' for i in new_items)
+    bot.send_message(TELEGRAM_CHANNEL_ID, f'New shoeboxes:\n{message}')
+
+
+async def check_sellings(bot, current_sellings):
+    try:
+        resp = requests.post('https://prd-api.step.app/game/1/user/getCurrent', headers=get_headers(), verify=False)
+        sellings = len(resp.json()['result']['changes']['dynUsers']['updated'][0]['sneakerSellings']['updated'])
+    except Exception:
+        raise
+
+    if current_sellings is not None and current_sellings > sellings:
+        await bot.send_message(TELEGRAM_CHANNEL_ID, f'Current sellings ({ENV.str("EMAIL")}): {sellings}')
+
+
+def get_headers(auth=True):
+    headers = {
+        'User-Agent': 'stepapp/1.0 (com.step.stepapp-ios; build:25; iOS 15.7.0) Alamofire/5.6.1',
+        'Accept-Encoding': 'br;q=1.0, gzip;q=0.9, deflate;q=0.8',
+        'Accept-Language': 'en-KZ;q=1.0, ru-KZ;q=0.9'
+    }
+
+    if auth:
+        headers['Authorization'] = f'Bearer {get_token()}'
+
+    return headers
 
 
 def get_token():
@@ -71,12 +103,8 @@ def get_token():
 
 
 def get_new_token():
-    headers = {
-        'User-Agent': 'stepapp/1.0 (com.step.stepapp-ios; build:25; iOS 15.7.0) Alamofire/5.6.1',
-        'Accept-Encoding': 'br;q=1.0, gzip;q=0.9, deflate;q=0.8',
-    }
     data = {'params':{'email': ENV.str('EMAIL'), 'password': ENV.str('PASSWORD')}}
-    resp = requests.post('https://prd-api.step.app/auth/auth/loginWithPassword/', headers=headers, json=data, verify=False, timeout=5)
+    resp = requests.post('https://prd-api.step.app/auth/auth/loginWithPassword/', headers=get_headers(False), json=data, verify=False, timeout=2)
 
     try:
         resp.raise_for_status()
@@ -96,71 +124,51 @@ def get_new_token():
     return acc_token
 
 
-def cache(items):
-    global _CACHE
-
-    for item in items:
-        _CACHE[str(item['sellingId'])] = item
-
-    with open('cache.json', 'w') as f:
-        json.dump(_CACHE, f)
-
-
-def buy(items):
-    for item in items:
-        if item['priceFitfi'] < 8000:
-            headers = {
-                'Authorization': f'Bearer {get_token()}',
-                'User-Agent': 'stepapp/1.0 (com.step.stepapp-ios; build:25; iOS 15.7.0) Alamofire/5.6.1',
-                'Accept-Encoding': 'br;q=1.0, gzip;q=0.9, deflate;q=0.8',
-            }
-            data = {'params':{'sellingId': item['sellingId']}}
-            resp = requests.post('https://prd-api.step.app/game/1/market/buyShoeBox', headers=headers, json=data, verify=False)
-            print('Buy')
-            print(item)
-            print(resp.status_code)
-            print(resp.text)
-            print('---')
-
-
-def push(items):
-    with _provide_bot():
-        message = '\n'.join(f'{i["priceFitfi"]} FI' for i in items)
-        _BOT.send_message(TELEGRAM_CHANNEL_ID, f'New shoeboxes:\n{message}')
-
-
 def main():
-    global _CACHE
-
     if os.path.exists('auth.json'):
         os.remove('auth.json')
 
-    with open('cache.json', 'r') as f:
-        _CACHE = json.load(f)
+    async def check_loop():
+        session = os.path.join(os.path.dirname(__file__), 'bot-1')
+        client = TelegramClient(session, TELEGRAM_APP_ID, TELEGRAM_APP_TOKEN)
+        bot = await client.start(bot_token=TELEGRAM_BOT_TOKEN)
+        current_sellings = None
+
+        while True:
+            try:
+                current_sellings = await check_sellings(bot, current_sellings)
+            except Exception as e:
+                print(e)
+
+            await asyncio.sleep(60)
+
+    loop = asyncio.new_event_loop()
+    loop.create_task(check_loop())
+    thread = threading.Thread(target=loop.run_forever)
+    thread.start()
+    time.sleep(1)  # Sleep to have enough time to get current auth in thread
+
+    session = os.path.join(os.path.dirname(__file__), 'bot')
+    client = TelegramClient(session, TELEGRAM_APP_ID, TELEGRAM_APP_TOKEN)
+    bot = client.start(bot_token=TELEGRAM_BOT_TOKEN)
+
+    if os.path.exists('cache.json'):
+        with open('cache.json', 'r') as f:
+            cache = json.load(f)
+    else:
+        cache = {'shoeboxes': {}}
 
     while True:
         try:
-            check()
+            check_shoeboxes(bot, cache['shoeboxes'])
         except Exception as e:
             print(e)
             break
 
-        time.sleep(0.5)
+        with open('cache.json', 'w') as f:
+            json.dump(cache, f)
 
-
-_CACHE = {}
-_BOT = None
-
-
-def _provide_bot():
-    global _BOT
-
-    if _BOT is None:
-        session = os.path.join(os.path.dirname(__file__), 'bot')
-        client = TelegramClient(session, TELEGRAM_APP_ID, TELEGRAM_APP_TOKEN)
-        _BOT = client.start(bot_token=TELEGRAM_BOT_TOKEN)
-
-    return _BOT
+        time.sleep(0.6)
 
 
 if __name__ == '__main__':

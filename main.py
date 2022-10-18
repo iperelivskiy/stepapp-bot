@@ -61,15 +61,17 @@ def check_shoeboxes(bot, cur_items):
     bot.send_message(TELEGRAM_CHANNEL_ID, f'New shoeboxes:\n{message}')
 
 
-async def check_sellings(bot, current_sellings):
+async def check_sellings(bot, cur_sellings):
     try:
         resp = requests.post('https://prd-api.step.app/game/1/user/getCurrent', headers=get_headers(), verify=False)
         sellings = len(resp.json()['result']['changes']['dynUsers']['updated'][0]['sneakerSellings']['updated'])
     except Exception:
         raise
 
-    if current_sellings is not None and current_sellings > sellings:
+    if cur_sellings is not None and cur_sellings > sellings:
         await bot.send_message(TELEGRAM_CHANNEL_ID, f'Current sellings ({ENV.str("EMAIL")}): {sellings}')
+
+    return sellings
 
 
 def get_headers(auth=True):
@@ -140,7 +142,7 @@ def main():
             except Exception as e:
                 print(e)
 
-            await asyncio.sleep(60)
+            await asyncio.sleep(30)
 
     loop = asyncio.new_event_loop()
     loop.create_task(check_loop())

@@ -52,12 +52,17 @@ def check_shoeboxes(bot, cur_items):
     for item in new_items:
         if item['priceFitfi'] <= ENV.int('MAX_PRICE'):
             data = {'params':{'sellingId': item['sellingId']}}
-            resp = requests.post('https://prd-api.step.app/game/1/market/buyShoeBox', headers=get_headers(), json=data, verify=False)
-            print('Buy')
-            print(item)
-            print(resp.status_code)
-            print(resp.text)
-            print('---')
+
+            try:
+                resp = requests.post('https://prd-api.step.app/game/1/market/buyShoeBox', headers=get_headers(), json=data, verify=False, timeout=2)
+            except Exception as e:
+                print(e)
+            else:
+                print('Buy')
+                print(item)
+                print(resp.status_code)
+                print(resp.text)
+                print('---')
 
     message = '\n'.join(f'{i["priceFitfi"]} FI' for i in new_items)
     bot.send_message(TELEGRAM_CHANNEL_ID, f'New shoeboxes:\n{message}')
@@ -139,10 +144,7 @@ def main():
 
     stop_event = threading.Event()
 
-    async def check_loop():
-        session = os.path.join(os.path.dirname(__file__), 'bot-1')
-        client = TelegramClient(session, TELEGRAM_APP_ID, TELEGRAM_APP_TOKEN)
-        bot = await client.start(bot_token=TELEGRAM_BOT_TOKEN)
+    async def check_loop(bot):
         current_sellings = None
 
         while True:
@@ -151,21 +153,28 @@ def main():
             except Exception as e:
                 print(e)
 
-            await asyncio.sleep(30)
+            await asyncio.sleep(5)
 
     def run_check_loop():
         loop = asyncio.new_event_loop()
-        loop.create_task(check_loop())
         asyncio.set_event_loop(loop)
 
         async def check_loop_stop():
+            session = os.path.join(os.path.dirname(__file__), 'bot-1')
+            client = TelegramClient(session, TELEGRAM_APP_ID, TELEGRAM_APP_TOKEN)
+            bot = await client.start(bot_token=TELEGRAM_BOT_TOKEN)
+            task = loop.create_task(check_loop(bot))
+
             while True:
                 if stop_event.is_set():
                     break
 
                 await asyncio.sleep(1)
 
-        asyncio.run(check_loop_stop())
+            task.cancel()
+            await client.disconnect()
+
+        loop.run_until_complete(check_loop_stop())
 
     thread = threading.Thread(target=run_check_loop)
     thread.start()

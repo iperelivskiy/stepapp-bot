@@ -55,6 +55,7 @@ def check_shoeboxes(bot, cur_items):
 
             try:
                 resp = requests.post('https://prd-api.step.app/game/1/market/buyShoeBox', headers=get_headers(), json=data, verify=False, timeout=2)
+                resp.raise_for_status()
             except Exception as e:
                 print(e)
             else:
@@ -70,10 +71,13 @@ def check_shoeboxes(bot, cur_items):
 
 
 async def check_sellings(bot, cur_sellings):
+    resp = requests.post('https://prd-api.step.app/game/1/user/getCurrent', headers=get_headers(), verify=False)
+
     try:
-        resp = requests.post('https://prd-api.step.app/game/1/user/getCurrent', headers=get_headers(), verify=False)
+        resp.raise_for_status()
         sellings = len(resp.json()['result']['changes']['dynUsers']['updated'][0]['sneakerSellings']['updated'])
     except Exception:
+        print(resp.text)
         raise
 
     if cur_sellings is not None and cur_sellings > sellings:

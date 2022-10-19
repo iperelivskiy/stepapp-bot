@@ -229,11 +229,11 @@ def main():
         with open('cache.json', 'r') as f:
             cache = json.load(f)
     else:
-        cache = {'shoeboxes': {}}
+        cache = {EMAIL: {'shoeboxes': {}}}
 
     while True:
         try:
-            check_shoeboxes(bot, cache['shoeboxes'])
+            check_shoeboxes(bot, cache[EMAIL]['shoeboxes'])
         except Exception as e:
             stop_event.set()
             print(e)

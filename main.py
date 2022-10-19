@@ -1,6 +1,7 @@
 import asyncio
 import datetime as dt
 import json
+import hashlib
 import os
 import random
 import signal
@@ -19,6 +20,11 @@ TELEGRAM_APP_ID = 5145344
 TELEGRAM_APP_TOKEN = '1a822dccf4c1fe151eceba3cec24958f'
 TELEGRAM_BOT_TOKEN = '5600428438:AAFgSPZWK18FSmzMhAHRoeOBhhiy967hDhU'
 TELEGRAM_CHANNEL_ID = -1001807612189
+
+EMAIL = ENV.str('EMAIL')
+PASSWORD = ENV.str('PASSWORD')
+MAX_PRICE = ENV.int('MAX_PRICE')
+NEW_ITEMS_PUSH = ENV.bool('NEW_ITEMS_PUSH', False)
 
 
 def check_shoeboxes(bot, cur_items):
@@ -57,7 +63,7 @@ def check_shoeboxes(bot, cur_items):
         3 - Hiker
         4 - Racer
         """
-        if item['priceFitfi'] > ENV.int('MAX_PRICE'):
+        if item['priceFitfi'] > MAX_PRICE:
             return False
 
         if item['staticSneakerTypeId'] == 4 and item['staticShoeBoxRarityId'] == 1 and item['priceFitfi'] > 4000:
@@ -84,7 +90,7 @@ def check_shoeboxes(bot, cur_items):
             print(resp.text)
             print('---')
 
-    if ENV.bool('NEW_ITEMS_PUSH', False):
+    if NEW_ITEMS_PUSH:
         message = '\n'.join(f'{i["priceFitfi"]} FI' for i in new_items)
         bot.send_message(TELEGRAM_CHANNEL_ID, f'New shoeboxes:\n{message}')
 
@@ -103,7 +109,7 @@ async def check_sellings(bot, cur_sellings):
         raise
 
     if cur_sellings is not None and cur_sellings > sellings:
-        await bot.send_message(TELEGRAM_CHANNEL_ID, f'Current sellings ({ENV.str("EMAIL")}): {sellings}')
+        await bot.send_message(TELEGRAM_CHANNEL_ID, f'Current sellings ({EMAIL}): {sellings}')
 
     return sellings
 
@@ -127,7 +133,7 @@ def get_token():
 
     with open('auth.json', 'r') as f:
         auth = json.load(f)
-        token = auth.get(ENV.str('EMAIL'))
+        token = auth.get(EMAIL)
         if not token:
             return get_new_token()
 
@@ -141,7 +147,7 @@ def get_token():
 
 
 def get_new_token():
-    data = {'params':{'email': ENV.str('EMAIL'), 'password': ENV.str('PASSWORD')}}
+    data = {'params':{'email': EMAIL, 'password': PASSWORD}}
     resp = requests.post('https://prd-api.step.app/auth/auth/loginWithPassword/', headers=get_headers(False), json=data, verify=False)
 
     try:
@@ -157,12 +163,12 @@ def get_new_token():
     else:
         auth = {}
 
-    auth[ENV.str('EMAIL')] = token
+    auth[EMAIL] = token
 
     with open('auth.json', 'w') as f:
         json.dump(auth, f)
 
-    print('Auth success for', ENV.str('EMAIL'))
+    print('Auth success for', EMAIL)
     print(token)
 
     return token
@@ -173,11 +179,11 @@ def main():
         raise KeyboardInterrupt()
 
     signal.signal(signal.SIGTERM, handle_sigterm)
-
-    if os.path.exists('auth.json'):
-        os.remove('auth.json')
-
     stop_event = threading.Event()
+    telegram_dir = os.path.join(os.path.dirname(__file__), 'telegram')
+
+    if not os.path.exists(telegram_dir):
+        os.makedirs(telegram_dir)
 
     async def check_loop(bot):
         current_sellings = None
@@ -195,7 +201,7 @@ def main():
         asyncio.set_event_loop(loop)
 
         async def check_loop_stop():
-            session = os.path.join(os.path.dirname(__file__), 'bot-1')
+            session = os.path.join(telegram_dir, f'bot-{hashlib.md5(EMAIL.encode()).hexdigest()}-1')
             client = TelegramClient(session, TELEGRAM_APP_ID, TELEGRAM_APP_TOKEN)
             bot = await client.start(bot_token=TELEGRAM_BOT_TOKEN)
             task = loop.create_task(check_loop(bot))
@@ -215,7 +221,7 @@ def main():
     thread.start()
     time.sleep(1)  # Sleep to have enough time to get current auth in thread
 
-    session = os.path.join(os.path.dirname(__file__), 'bot')
+    session = os.path.join(telegram_dir, f'bot-{hashlib.md5(EMAIL.encode()).hexdigest()}')
     client = TelegramClient(session, TELEGRAM_APP_ID, TELEGRAM_APP_TOKEN)
     bot = client.start(bot_token=TELEGRAM_BOT_TOKEN)
 

@@ -1,7 +1,6 @@
 auth.json
 cache.json
-bot*.session
-bot*.session-journal
+telegram
 
 .vscode/
 *.code-workspace

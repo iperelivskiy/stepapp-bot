@@ -1,0 +1,31 @@
+version: '3'
+
+services:
+  bot1:
+    build: .
+    image: stepapp-bot
+    volumes:
+      - .:/opt/app
+    environment:
+      - DEBUG=true
+      - ENVIRONMENT=development
+      - PYTHONUNBUFFERED=1
+      - EMAIL=scoots-grassy-0h@icloud.com
+      - PASSWORD=${PASSWORD}
+      - MAX_PRICE=7000
+      - NEW_ITEMS_PUSH=True
+    restart: always
+
+  bot2:
+    image: stepapp-bot
+    volumes:
+      - .:/opt/app
+    environment:
+      - DEBUG=true
+      - ENVIRONMENT=development
+      - PYTHONUNBUFFERED=1
+      - EMAIL=corner-biliary0l@icloud.com
+      - PASSWORD=${PASSWORD}
+      - MAX_PRICE=7000
+      - NEW_ITEMS_PUSH=False
+    restart: always

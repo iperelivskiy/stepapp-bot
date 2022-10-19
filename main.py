@@ -116,7 +116,7 @@ async def check_sellings(bot, cur_sellings):
 
 def get_headers(auth=True):
     headers = {
-        'User-Agent': 'stepapp/1.0 (com.step.stepapp-ios; build:25; iOS 15.7.0) Alamofire/5.6.1',
+        'User-Agent': 'stepapp/1.0 (com.step.stepapp-ios; build:30; iOS 15.7.0) Alamofire/5.6.1',
         'Accept-Encoding': 'br;q=1.0, gzip;q=0.9, deflate;q=0.8',
         'Accept-Language': 'en-KZ;q=1.0, ru-KZ;q=0.9'
     }

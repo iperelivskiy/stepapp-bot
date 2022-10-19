@@ -229,7 +229,9 @@ def main():
         with open('cache.json', 'r') as f:
             cache = json.load(f)
     else:
-        cache = {EMAIL: {'shoeboxes': {}}}
+        cache = {}
+
+    cache.setdefault(EMAIL, {'shoeboxes': {}})
 
     while True:
         try:

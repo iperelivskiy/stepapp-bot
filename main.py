@@ -242,7 +242,7 @@ def main():
         with open('cache.json', 'w') as f:
             json.dump(cache, f)
 
-        time.sleep(random.randint(8, 20) / 10)
+        time.sleep(random.randint(6, 16) / 10)
 
 
 if __name__ == '__main__':

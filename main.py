@@ -2,6 +2,7 @@ import asyncio
 import datetime as dt
 import json
 import os
+import random
 import signal
 import sys
 import threading
@@ -69,7 +70,7 @@ def check_shoeboxes(bot, cur_items):
         if not is_allowed(item):
             continue
 
-        data = {'params':{'sellingId': item['sellingId']}}
+        data = {'params': {'sellingId': item['sellingId']}}
 
         try:
             resp = requests.post('https://prd-api.step.app/game/1/market/buyShoeBox', headers=get_headers(), json=data, verify=False, timeout=2)
@@ -126,37 +127,45 @@ def get_token():
 
     with open('auth.json', 'r') as f:
         auth = json.load(f)
-        acc_token, rfr_token = auth['access'], auth['refresh']
+        token = auth.get(ENV.str('EMAIL'))
+        if not token:
+            return get_new_token()
 
-    token_data = jwt.decode(acc_token, algorithms=['HS256'], options={'verify_signature': False})
+    token_data = jwt.decode(token, algorithms=['HS256'], options={'verify_signature': False})
     exp = dt.datetime.fromtimestamp(token_data['Exp'])
 
     if dt.datetime.now() + dt.timedelta(seconds=600) < exp:
-        return acc_token
+        return token
     else:
         return get_new_token()
 
 
 def get_new_token():
     data = {'params':{'email': ENV.str('EMAIL'), 'password': ENV.str('PASSWORD')}}
-    resp = requests.post('https://prd-api.step.app/auth/auth/loginWithPassword/', headers=get_headers(False), json=data, verify=False, timeout=2)
+    resp = requests.post('https://prd-api.step.app/auth/auth/loginWithPassword/', headers=get_headers(False), json=data, verify=False)
 
     try:
         resp.raise_for_status()
-        acc_token = resp.json()['result']['accessToken']
-        rfr_token = resp.json()['result']['refreshToken']
+        token = resp.json()['result']['accessToken']
     except Exception:
         print(resp.text)
         raise
 
+    if os.path.exists('auth.json'):
+        with open('auth.json', 'r') as f:
+            auth = json.load(f)
+    else:
+        auth = {}
+
+    auth[ENV.str('EMAIL')] = token
+
     with open('auth.json', 'w') as f:
-        json.dump({'access': acc_token, 'refresh': rfr_token}, f)
+        json.dump(auth, f)
 
     print('Auth success for', ENV.str('EMAIL'))
-    print(acc_token)
-    print(rfr_token)
+    print(token)
 
-    return acc_token
+    return token
 
 
 def main():
@@ -179,7 +188,7 @@ def main():
             except Exception as e:
                 print(e)
 
-            await asyncio.sleep(30)
+            await asyncio.sleep(60)
 
     def run_check_loop():
         loop = asyncio.new_event_loop()
@@ -227,7 +236,7 @@ def main():
         with open('cache.json', 'w') as f:
             json.dump(cache, f)
 
-        time.sleep(0.6)
+        time.sleep(random.randint(6, 10) / 10)
 
 
 if __name__ == '__main__':

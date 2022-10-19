@@ -231,9 +231,9 @@ def main():
     else:
         cache = {}
 
-    print(cache)
+    print(EMAIL, cache)
     cache.setdefault(EMAIL, {'shoeboxes': {}})
-    print(cache)
+    print(EMAIL, cache)
 
     while True:
         try:

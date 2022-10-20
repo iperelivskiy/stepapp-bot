@@ -16,16 +16,16 @@ services:
       - NEW_ITEMS_PUSH=False
     restart: always
 
-  # bot2:
-  #   image: stepapp-bot
-  #   volumes:
-  #     - .:/opt/app
-  #   environment:
-  #     - DEBUG=true
-  #     - ENVIRONMENT=development
-  #     - PYTHONUNBUFFERED=1
-  #     - EMAIL=corner-biliary0l@icloud.com
-  #     - PASSWORD=${PASSWORD}
-  #     - MAX_PRICE=7000
-  #     - NEW_ITEMS_PUSH=False
-  #   restart: always
+  bot2:
+    image: stepapp-bot
+    volumes:
+      - .:/opt/app
+    environment:
+      - DEBUG=true
+      - ENVIRONMENT=development
+      - PYTHONUNBUFFERED=1
+      - EMAIL=joule.05-sobs@icloud.com
+      - PASSWORD=${PASSWORD}
+      - MAX_PRICE=7000
+      - NEW_ITEMS_PUSH=False
+    restart: always

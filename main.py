@@ -232,11 +232,11 @@ def main():
     else:
         cache = {}
 
-    print(f'Loaded {EMAIL}', cache)
-    print('-')
+    # print(f'Loaded {EMAIL}', cache)
+    # print('-')
     cache.setdefault(EMAIL, {'shoeboxes': {}})
-    print(cache)
-    print('---')
+    # print(cache)
+    # print('---')
 
     while True:
         try:
@@ -247,8 +247,8 @@ def main():
             break
 
         with open('cache.json', 'w') as f:
-            print(f'Dumped {EMAIL}', cache)
-            print('---')
+            # print(f'Dumped {EMAIL}', cache)
+            # print('---')
             json.dump(cache, f)
 
         time.sleep(random.randint(6, 16) / 10)

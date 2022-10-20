@@ -8,6 +8,7 @@ import signal
 import sys
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 import jwt
 import requests
@@ -56,6 +57,21 @@ def check_shoeboxes(bot, cur_items):
 
     new_items.sort(key=lambda x: x['priceFitfi'])
 
+    def buy(item):
+        data = {'params': {'sellingId': item['sellingId']}}
+
+        try:
+            resp = requests.post('https://prd-api.step.app/game/1/market/buyShoeBox', headers=get_headers(), json=data, verify=False, timeout=2)
+            resp.raise_for_status()
+        except Exception as e:
+            print('Buy error', e)
+        else:
+            print('Buy')
+            print(item)
+            print(resp.status_code)
+            print(resp.text)
+            print('---')
+
     def is_allowed(item):
         """
         1 - Coach
@@ -72,23 +88,8 @@ def check_shoeboxes(bot, cur_items):
 
         return True
 
-    for item in new_items:
-        if not is_allowed(item):
-            continue
-
-        data = {'params': {'sellingId': item['sellingId']}}
-
-        try:
-            resp = requests.post('https://prd-api.step.app/game/1/market/buyShoeBox', headers=get_headers(), json=data, verify=False, timeout=2)
-            resp.raise_for_status()
-        except Exception as e:
-            print(e)
-        else:
-            print('Buy')
-            print(item)
-            print(resp.status_code)
-            print(resp.text)
-            print('---')
+    with ThreadPoolExecutor(max_workers=len(new_items)) as executor:
+        executor.map(buy, filter(is_allowed, new_items))
 
     if NEW_ITEMS_PUSH:
         message = '\n'.join(f'{i["priceFitfi"]} FI' for i in new_items)
@@ -244,6 +245,7 @@ def main():
             break
 
         with open('cache.json', 'w') as f:
+            print(EMAIL, cache)
             json.dump(cache, f)
 
         time.sleep(random.randint(6, 16) / 10)

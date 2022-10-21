@@ -176,10 +176,6 @@ def get_new_token():
 
 
 def main():
-    def handle_sigterm(*args):
-        raise KeyboardInterrupt()
-
-    signal.signal(signal.SIGTERM, handle_sigterm)
     stop_event = threading.Event()
     telegram_dir = os.path.join(os.path.dirname(__file__), 'telegram')
 
@@ -255,6 +251,11 @@ def main():
 
 
 if __name__ == '__main__':
+    def handle_sigterm(*args):
+        raise KeyboardInterrupt()
+
+    signal.signal(signal.SIGTERM, handle_sigterm)
+
     try:
         main()
     except KeyboardInterrupt:

@@ -1,16 +1,72 @@
 version: '3'
 
 services:
-  script:
+  # script:
+  #   build: .
+  #   volumes:
+  #     - .:/opt/app
+  #   environment:
+  #     - DEBUG=true
+  #     - ENVIRONMENT=development
+  #     - PYTHONUNBUFFERED=1
+  #     - EMAIL=${EMAIL}
+  #     - PASSWORD=${PASSWORD}
+  #     - MAX_PRICE=7000
+  #     - NEW_ITEMS_PUSH=${NEW_ITEMS_PUSH}
+  #   restart: always
+
+  watcher:
     build: .
+    image: stepapp-bot
+    command: ['python', 'app/watcher.py']
+    restart: always
+    depends_on:
+      - redis
     volumes:
       - .:/opt/app
     environment:
       - DEBUG=true
       - ENVIRONMENT=development
       - PYTHONUNBUFFERED=1
-      - EMAIL=${EMAIL}
+      - EMAIL=joule.05-sobs@icloud.com
       - PASSWORD=${PASSWORD}
-      - MAX_PRICE=7000
-      - NEW_ITEMS_PUSH=${NEW_ITEMS_PUSH}
+      - REDIS_URL=redis://redis:6379/0
+
+  redis:
+    image: redis
+    ports:
+      - 6379:6379
+    # expose:
+    #   - "6379"
+
+  buyer1:
+    image: stepapp-bot
+    command: ['python', 'app/buyer.py']
     restart: always
+    depends_on:
+      - redis
+    volumes:
+      - .:/opt/app
+    environment:
+      - DEBUG=true
+      - ENVIRONMENT=development
+      - PYTHONUNBUFFERED=1
+      - EMAIL=boxy.crumbs-0e@icloud.com
+      - PASSWORD=${PASSWORD}
+      - REDIS_URL=redis://redis:6379/0
+
+  buyer2:
+    image: stepapp-bot
+    command: ['python', 'app/buyer.py']
+    restart: always
+    depends_on:
+      - redis
+    volumes:
+      - .:/opt/app
+    environment:
+      - DEBUG=true
+      - ENVIRONMENT=development
+      - PYTHONUNBUFFERED=1
+      - EMAIL=joule.05-sobs@icloud.com
+      - PASSWORD=${PASSWORD}
+      - REDIS_URL=redis://redis:6379/0

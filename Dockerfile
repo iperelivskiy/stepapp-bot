@@ -8,5 +8,3 @@ WORKDIR /opt/app
 COPY ./requirements.txt /opt/app/requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . /opt/app
-
-CMD ["python", "main.py"]

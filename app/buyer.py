@@ -1,8 +1,8 @@
 import asyncio
 import datetime as dt
+import hashlib
 import json
 import os
-import random
 import signal
 import sys
 import urllib3
@@ -11,6 +11,7 @@ import aioredis
 import async_timeout
 import requests
 from environs import Env
+from telethon.sync import TelegramClient
 
 import auth
 
@@ -19,6 +20,11 @@ ENV = Env()
 REDIS_URL = ENV.str('REDIS_URL')
 MAX_PRICE = ENV.int('MAX_PRICE')
 EMAIL = ENV.str('EMAIL')
+
+TELEGRAM_APP_ID = 5145344
+TELEGRAM_APP_TOKEN = '1a822dccf4c1fe151eceba3cec24958f'
+TELEGRAM_BOT_TOKEN = '5600428438:AAFgSPZWK18FSmzMhAHRoeOBhhiy967hDhU'
+TELEGRAM_CHANNEL_ID = -1001807612189
 
 
 def is_allowed(item):
@@ -54,6 +60,25 @@ def buy(item):
     print('---')
 
 
+async def check_sellings(bot, cur_sellings):
+    resp = requests.post('https://prd-api.step.app/game/1/user/getCurrent', headers=auth.get_headers(), verify=False, timeout=2)
+
+    try:
+        resp.raise_for_status()
+        sellings = len(resp.json()['result']['changes']['dynUsers']['updated'][0]['sneakerSellings']['updated'])
+    except TypeError:
+        # No shoes left for sale
+        sellings = 0
+    except Exception:
+        print(resp.text)
+        raise
+
+    if cur_sellings is not None and cur_sellings > sellings:
+        await bot.send_message(TELEGRAM_CHANNEL_ID, f'Current sellings ({EMAIL}): {sellings}')
+
+    return sellings
+
+
 async def reader(channel: aioredis.client.PubSub):
     print(f'Reader started for {EMAIL}')
     while True:
@@ -80,18 +105,26 @@ async def main():
     redis = await aioredis.from_url(REDIS_URL, decode_responses=True)
     pubsub = redis.pubsub()
 
-    async def check_auth_loop():
+    telegram_dir = os.path.join(os.path.dirname(__file__), '..', 'telegram')
+    if not os.path.exists(telegram_dir):
+        os.makedirs(telegram_dir)
+
+    session = os.path.join(telegram_dir, f'bot-{hashlib.md5(EMAIL.encode()).hexdigest()}')
+    client = TelegramClient(session, TELEGRAM_APP_ID, TELEGRAM_APP_TOKEN)
+    bot = await client.start(bot_token=TELEGRAM_BOT_TOKEN)
+
+    async def check_sellings_loop(bot):
+        current_sellings = 10
+
         while True:
             try:
-                resp = requests.post('https://prd-api.step.app/game/1/user/getCurrent', headers=auth.get_headers(), verify=False, timeout=2)
-                if resp.status_code == 401:
-                    auth.get_new_token()
+                current_sellings = await check_sellings(bot, current_sellings)
             except Exception as e:
-                print('check_auth', e)
+                print('check_sellings', e)
 
-            await asyncio.sleep(60 * random.randint(5, 15))
+            await asyncio.sleep(60)
 
-    check_auth_loop_task = asyncio.create_task(check_auth_loop())
+    check_sellings_loop_task = asyncio.create_task(check_sellings_loop(bot))
 
     async def heartbeat_loop():
         while True:
@@ -105,9 +138,11 @@ async def main():
         await reader(p)
         await p.unsubscribe('shoeboxes')
 
-    check_auth_loop_task.cancel()
+    check_sellings_loop_task.cancel()
     heartbeat_loop_task.cancel()
+    await bot.disconnect()
     await pubsub.close()
+    await redis.close()
 
 
 if __name__ == '__main__':

@@ -63,25 +63,6 @@ async def check_shoeboxes(bot, redis):
     await bot.send_message(TELEGRAM_CHANNEL_ID, f'New shoeboxes:\n{message}')
 
 
-async def check_sellings(bot, cur_sellings):
-    resp = requests.post('https://prd-api.step.app/game/1/user/getCurrent', headers=auth.get_headers(), verify=False, timeout=2)
-
-    try:
-        resp.raise_for_status()
-        sellings = len(resp.json()['result']['changes']['dynUsers']['updated'][0]['sneakerSellings']['updated'])
-    except TypeError:
-        # No shoes left for sale
-        sellings = 0
-    except Exception:
-        print(resp.text)
-        raise
-
-    if cur_sellings is not None and cur_sellings > sellings:
-        await bot.send_message(TELEGRAM_CHANNEL_ID, f'Current sellings ({EMAIL}): {sellings}')
-
-    return sellings
-
-
 async def main():
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -95,19 +76,6 @@ async def main():
     client = TelegramClient(session, TELEGRAM_APP_ID, TELEGRAM_APP_TOKEN)
     bot = await client.start(bot_token=TELEGRAM_BOT_TOKEN)
 
-    async def check_sellings_loop(bot):
-        current_sellings = None
-
-        while True:
-            try:
-                current_sellings = await check_sellings(bot, current_sellings)
-            except Exception as e:
-                print('check_sellings', e)
-
-            await asyncio.sleep(60)
-
-    task = asyncio.create_task(check_sellings_loop(bot))
-
     while True:
         try:
             await check_shoeboxes(bot, redis)
@@ -117,7 +85,6 @@ async def main():
 
         time.sleep(random.randint(6, 12) / 10)
 
-    task.cancel()
     await bot.disconnect()
     await redis.close()
 

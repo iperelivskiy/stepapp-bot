@@ -1,23 +1,14 @@
 version: '3'
 
 services:
-  bot1:
+
+  watcher:
     build: .
     image: stepapp-bot
-    volumes:
-      - .:/opt/app
-    environment:
-      - DEBUG=true
-      - ENVIRONMENT=development
-      - PYTHONUNBUFFERED=1
-      - EMAIL=scoots-grassy-0h@icloud.com
-      - PASSWORD=${PASSWORD}
-      - MAX_PRICE=7000
-      - NEW_ITEMS_PUSH=True
+    command: ['python', 'app/watcher.py']
     restart: always
-
-  bot2:
-    image: stepapp-bot
+    depends_on:
+      - redis
     volumes:
       - .:/opt/app
     environment:
@@ -26,6 +17,43 @@ services:
       - PYTHONUNBUFFERED=1
       - EMAIL=corner-biliary0l@icloud.com
       - PASSWORD=${PASSWORD}
-      - MAX_PRICE=7000
-      - NEW_ITEMS_PUSH=False
+      - REDIS_URL=redis://redis:6379/0
+
+  redis:
+    image: redis
+    ports:
+      - 6379:6379
+
+  buyer1:
+    image: stepapp-bot
+    command: ['python', 'app/buyer.py']
     restart: always
+    depends_on:
+      - redis
+    volumes:
+      - .:/opt/app
+    environment:
+      - DEBUG=true
+      - ENVIRONMENT=development
+      - PYTHONUNBUFFERED=1
+      - REDIS_URL=redis://redis:6379/0
+      - EMAIL=scoots-grassy-0h@icloud.com
+      - PASSWORD=${PASSWORD}
+      - MAX_PRICE=7000
+
+  buyer2:
+    image: stepapp-bot
+    command: ['python', 'app/buyer.py']
+    restart: always
+    depends_on:
+      - redis
+    volumes:
+      - .:/opt/app
+    environment:
+      - DEBUG=true
+      - ENVIRONMENT=development
+      - PYTHONUNBUFFERED=1
+      - REDIS_URL=redis://redis:6379/0
+      - EMAIL=corner-biliary0l@icloud.com
+      - PASSWORD=${PASSWORD}
+      - MAX_PRICE=7000

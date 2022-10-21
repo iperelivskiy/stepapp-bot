@@ -3,22 +3,56 @@ import json
 import os
 import signal
 import sys
+import urllib3
 
 import aioredis
 import async_timeout
+import requests
 from environs import Env
+
+import auth
 
 
 ENV = Env()
 REDIS_URL = ENV.str('REDIS_URL')
+MAX_PRICE = ENV.int('MAX_PRICE')
 
 
-async def buy(item):
-    print(f"(Reader) Message Received: {item}")
+def is_allowed(item):
+    """
+    1 - Coach
+    2 - Walker
+    3 - Hiker
+    4 - Racer
+    """
+    if item['priceFitfi'] > MAX_PRICE:
+        return False
+
+    if item['staticSneakerTypeId'] == 4 and item['staticShoeBoxRarityId'] == 1 and item['priceFitfi'] > 4000:
+        # Aint buying common racer with price over 4000 FI
+        return False
+
+    return True
+
+
+def buy(item):
+    print('BUYING', item)
+    data = {'params': {'sellingId': item['sellingId']}}
+
+    try:
+        resp = requests.post('https://prd-api.step.app/game/1/market/buyShoeBox', headers=auth.get_headers(), json=data, verify=False)
+        resp.raise_for_status()
+    except Exception as e:
+        print('BUYING ERROR', e)
+    else:
+        print(resp.status_code)
+        print(resp.text)
+
+    print('---')
 
 
 async def reader(channel: aioredis.client.PubSub):
-    print('Start reader')
+    print('Reader started')
     while True:
         try:
             async with async_timeout.timeout(1):
@@ -29,17 +63,17 @@ async def reader(channel: aioredis.client.PubSub):
                     except Exception:
                         pass
                     else:
-                        asyncio.create_task(buy(item))
-
-                    # if message["data"] == STOPWORD:
-                    #     print("(Reader) STOP")
-                    #     break
-                await asyncio.sleep(0.05)
+                        if is_allowed(item):
+                            asyncio.create_task(asyncio.to_thread(buy, item))
         except asyncio.TimeoutError:
             pass
+        finally:
+            await asyncio.sleep(0.05)
 
 
 async def main():
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
     redis = await aioredis.from_url(REDIS_URL, decode_responses=True)
     pubsub = redis.pubsub()
 

@@ -51,9 +51,10 @@ services:
       - DEBUG=true
       - ENVIRONMENT=development
       - PYTHONUNBUFFERED=1
+      - REDIS_URL=redis://redis:6379/0
       - EMAIL=boxy.crumbs-0e@icloud.com
       - PASSWORD=${PASSWORD}
-      - REDIS_URL=redis://redis:6379/0
+      - MAX_PRICE=7000
 
   buyer2:
     image: stepapp-bot
@@ -67,6 +68,7 @@ services:
       - DEBUG=true
       - ENVIRONMENT=development
       - PYTHONUNBUFFERED=1
+      - REDIS_URL=redis://redis:6379/0
       - EMAIL=joule.05-sobs@icloud.com
       - PASSWORD=${PASSWORD}
-      - REDIS_URL=redis://redis:6379/0
+      - MAX_PRICE=7000

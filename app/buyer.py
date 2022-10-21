@@ -3,6 +3,7 @@ import datetime as dt
 import hashlib
 import json
 import os
+import random
 import signal
 import sys
 import urllib3
@@ -96,7 +97,7 @@ async def reader(channel: aioredis.client.PubSub):
         except asyncio.TimeoutError:
             pass
         finally:
-            await asyncio.sleep(0.05)
+            await asyncio.sleep(0.02)
 
 
 async def main():
@@ -122,7 +123,7 @@ async def main():
             except Exception as e:
                 print('check_sellings', e)
 
-            await asyncio.sleep(60)
+            await asyncio.sleep(random.randint(30, 60))
 
     check_sellings_loop_task = asyncio.create_task(check_sellings_loop(bot))
 

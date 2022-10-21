@@ -39,14 +39,14 @@ def is_allowed(item):
 
 
 def buy(item):
-    print(f'{EMAIL} BUYING', item)
+    print(f'BUYING for {EMAIL}', item)
     data = {'params': {'sellingId': item['sellingId']}}
 
     try:
         resp = requests.post('https://prd-api.step.app/game/1/market/buyShoeBox', headers=auth.get_headers(), json=data, verify=False)
         resp.raise_for_status()
     except Exception as e:
-        print(f'{EMAIL} BUYING ERROR', e)
+        print(f'BUYING ERROR for {EMAIL}', e)
     else:
         print(resp.status_code)
         print(resp.text)
@@ -55,7 +55,7 @@ def buy(item):
 
 
 async def reader(channel: aioredis.client.PubSub):
-    print(f'{EMAIL} reader started')
+    print(f'Reader started for {EMAIL}')
     while True:
         try:
             async with async_timeout.timeout(1):
@@ -87,7 +87,7 @@ async def main():
                 if resp.status_code == 401:
                     auth.get_new_token()
             except Exception as e:
-                print(e)
+                print('check_auth', e)
 
             await asyncio.sleep(60 * random.randint(5, 15))
 

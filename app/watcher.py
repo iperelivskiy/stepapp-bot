@@ -102,7 +102,7 @@ async def main():
             try:
                 current_sellings = await check_sellings(bot, current_sellings)
             except Exception as e:
-                print(e)
+                print('check_sellings', e)
 
             await asyncio.sleep(60)
 
@@ -112,7 +112,7 @@ async def main():
         try:
             await check_shoeboxes(bot, redis)
         except Exception as e:
-            print(e)
+            print('check_shoeboxes', e)
             break
 
         time.sleep(random.randint(6, 12) / 10)

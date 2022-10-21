@@ -40,7 +40,7 @@ def get_token():
     token_data = jwt.decode(token, algorithms=['HS256'], options={'verify_signature': False})
     exp = dt.datetime.fromtimestamp(token_data['Exp'])
 
-    if dt.datetime.now() + dt.timedelta(seconds=600) < exp:
+    if dt.datetime.now() + dt.timedelta(seconds=60 * 10) < exp:
         return token
     else:
         return get_new_token()

@@ -1,6 +1,8 @@
 import asyncio
+import datetime as dt
 import json
 import os
+import random
 import signal
 import sys
 import urllib3
@@ -16,6 +18,7 @@ import auth
 ENV = Env()
 REDIS_URL = ENV.str('REDIS_URL')
 MAX_PRICE = ENV.int('MAX_PRICE')
+EMAIL = ENV.str('EMAIL')
 
 
 def is_allowed(item):
@@ -36,14 +39,14 @@ def is_allowed(item):
 
 
 def buy(item):
-    print('BUYING', item)
+    print(f'{EMAIL} BUYING', item)
     data = {'params': {'sellingId': item['sellingId']}}
 
     try:
         resp = requests.post('https://prd-api.step.app/game/1/market/buyShoeBox', headers=auth.get_headers(), json=data, verify=False)
         resp.raise_for_status()
     except Exception as e:
-        print('BUYING ERROR', e)
+        print(f'{EMAIL} BUYING ERROR', e)
     else:
         print(resp.status_code)
         print(resp.text)
@@ -52,7 +55,7 @@ def buy(item):
 
 
 async def reader(channel: aioredis.client.PubSub):
-    print('Reader started')
+    print(f'{EMAIL} reader started')
     while True:
         try:
             async with async_timeout.timeout(1):
@@ -77,11 +80,33 @@ async def main():
     redis = await aioredis.from_url(REDIS_URL, decode_responses=True)
     pubsub = redis.pubsub()
 
+    async def check_auth_loop():
+        while True:
+            try:
+                resp = requests.post('https://prd-api.step.app/game/1/user/getCurrent', headers=auth.get_headers(), verify=False, timeout=2)
+                if resp.status_code == 401:
+                    auth.get_new_token()
+            except Exception as e:
+                print(e)
+
+            await asyncio.sleep(60 * random.randint(5, 15))
+
+    check_auth_loop_task = asyncio.create_task(check_auth_loop())
+
+    async def heartbeat_loop():
+        while True:
+            await asyncio.sleep(30)
+            print(f'Heartbeat {dt.datetime.now()}')
+
+    heartbeat_loop_task = asyncio.create_task(heartbeat_loop())
+
     async with pubsub as p:
         await p.subscribe('shoeboxes')
         await reader(p)
         await p.unsubscribe('shoeboxes')
 
+    check_auth_loop_task.cancel()
+    heartbeat_loop_task.cancel()
     await pubsub.close()
 
 

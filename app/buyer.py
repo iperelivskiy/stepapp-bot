@@ -114,7 +114,7 @@ async def main():
     bot = await client.start(bot_token=TELEGRAM_BOT_TOKEN)
 
     async def check_sellings_loop(bot):
-        current_sellings = 10
+        current_sellings = None
 
         while True:
             try:

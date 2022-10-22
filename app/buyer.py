@@ -55,7 +55,7 @@ async def buy(item, bot):
     except Exception as e:
         print(f'BUYING ERROR for {EMAIL}', e)
     else:
-        await bot.send_message(TELEGRAM_CHANNEL_ID, f'Buy success ({EMAIL})')
+        await bot.send_message(TELEGRAM_CHANNEL_ID, f'{EMAIL}\nBuy success')
         print(resp.status_code)
         print(resp.text)
 
@@ -76,7 +76,7 @@ async def check_sellings(cur_sellings, bot):
         raise
 
     if cur_sellings is not None and cur_sellings > sellings:
-        await bot.send_message(TELEGRAM_CHANNEL_ID, f'Current sellings ({EMAIL}): {sellings}')
+        await bot.send_message(TELEGRAM_CHANNEL_ID, f'{EMAIL}\nCurrent sellings: {sellings}')
 
     return sellings
 

@@ -21,6 +21,7 @@ services:
 
   redis:
     image: redis
+    restart: always
     volumes:
       - ./data/redis:/data
     ports:

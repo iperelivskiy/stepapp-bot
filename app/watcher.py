@@ -64,8 +64,6 @@ async def check_shoeboxes(bot, redis):
 
 
 async def main():
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
     redis = await aioredis.from_url(REDIS_URL, decode_responses=True)
 
     telegram_dir = os.path.join(os.path.dirname(__file__), '..', 'telegram')
@@ -75,6 +73,7 @@ async def main():
     session = os.path.join(telegram_dir, f'bot-watcher')
     client = TelegramClient(session, TELEGRAM_APP_ID, TELEGRAM_APP_TOKEN)
     bot = await client.start(bot_token=TELEGRAM_BOT_TOKEN)
+    print(f'Watcher started for {EMAIL}')
 
     while True:
         try:
@@ -90,6 +89,8 @@ async def main():
 
 
 if __name__ == '__main__':
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
     def handle_sigterm(*args):
         raise KeyboardInterrupt()
 

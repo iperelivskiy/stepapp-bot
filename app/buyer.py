@@ -101,8 +101,6 @@ async def reader(channel: aioredis.client.PubSub):
 
 
 async def main():
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
     redis = await aioredis.from_url(REDIS_URL, decode_responses=True)
     pubsub = redis.pubsub()
 
@@ -147,6 +145,8 @@ async def main():
 
 
 if __name__ == '__main__':
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
     def handle_sigterm(*args):
         raise KeyboardInterrupt()
 

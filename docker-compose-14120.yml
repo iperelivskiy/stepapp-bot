@@ -15,7 +15,7 @@ services:
       - DEBUG=true
       - ENVIRONMENT=development
       - PYTHONUNBUFFERED=1
-      - EMAIL=corner-biliary0l@icloud.com
+      - EMAIL=piste.cloths-0j@icloud.com
       - PASSWORD=${PASSWORD}
       - REDIS_URL=redis://redis:6379/0
 

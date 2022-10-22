@@ -130,7 +130,7 @@ async def main():
     async def heartbeat_loop():
         while True:
             await asyncio.sleep(30)
-            print(f'Heartbeat {dt.datetime.now()}')
+            print(f'--- {dt.datetime.now()}')
 
     heartbeat_loop_task = asyncio.create_task(heartbeat_loop())
 

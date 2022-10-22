@@ -6,8 +6,6 @@ services:
     image: stepapp-bot
     command: ['python', 'app/buyer.py']
     restart: always
-    depends_on:
-      - redis
     volumes:
       - .:/opt/app
     environment:
@@ -23,8 +21,6 @@ services:
     image: stepapp-bot
     command: ['python', 'app/buyer.py']
     restart: always
-    depends_on:
-      - redis
     volumes:
       - .:/opt/app
     environment:

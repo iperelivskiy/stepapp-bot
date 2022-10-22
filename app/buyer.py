@@ -45,7 +45,7 @@ def is_allowed(item):
     return True
 
 
-async def buy(item, bot):
+def buy(item, bot):
     print(f'BUYING for {EMAIL}', item)
     data = {'params': {'sellingId': item['sellingId']}}
 
@@ -55,7 +55,7 @@ async def buy(item, bot):
     except Exception as e:
         print(f'BUYING ERROR for {EMAIL}', e)
     else:
-        await bot.send_message(TELEGRAM_CHANNEL_ID, f'{EMAIL}\nBuy success')
+        asyncio.create_task(bot.send_message(TELEGRAM_CHANNEL_ID, f'{EMAIL}\nBuy success'))
         print(resp.status_code)
         print(resp.text)
 

@@ -25,6 +25,8 @@ services:
       - ./data/redis:/data
     ports:
       - 63179:6379
+    expose:
+      - "6379"
     environment:
       - REDIS_HOST_PASSWORD=${REDIS_PASSWORD}
 

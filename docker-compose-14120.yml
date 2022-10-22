@@ -15,7 +15,7 @@ services:
       - DEBUG=true
       - ENVIRONMENT=development
       - PYTHONUNBUFFERED=1
-      - REDIS_URL=redis://default:${REDIS_PASSWORD}@redis:6379/0
+      - REDIS_URL=redis://default:${REDIS_PASSWORD}@redis:63179/0
       - EMAIL=piste.cloths-0j@icloud.com
       - PASSWORD=${PASSWORD}
 
@@ -24,7 +24,7 @@ services:
     volumes:
       - ./data/redis:/data
     ports:
-      - 6379:6379
+      - 63179:6379
     environment:
       - REDIS_HOST_PASSWORD=${REDIS_PASSWORD}
 
@@ -40,7 +40,7 @@ services:
       - DEBUG=true
       - ENVIRONMENT=development
       - PYTHONUNBUFFERED=1
-      - REDIS_URL=redis://default:${REDIS_PASSWORD}@redis:6379/0
+      - REDIS_URL=redis://default:${REDIS_PASSWORD}@redis:63179/0
       - EMAIL=scoots-grassy-0h@icloud.com
       - PASSWORD=${PASSWORD}
       - MAX_PRICE=7000
@@ -57,7 +57,7 @@ services:
       - DEBUG=true
       - ENVIRONMENT=development
       - PYTHONUNBUFFERED=1
-      - REDIS_URL=redis://default:${REDIS_PASSWORD}@redis:6379/0
+      - REDIS_URL=redis://default:${REDIS_PASSWORD}@redis:63179/0
       - EMAIL=corner-biliary0l@icloud.com
       - PASSWORD=${PASSWORD}
       - MAX_PRICE=7000

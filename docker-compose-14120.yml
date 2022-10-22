@@ -61,3 +61,20 @@ services:
       - EMAIL=corner-biliary0l@icloud.com
       - PASSWORD=${PASSWORD}
       - MAX_PRICE=7000
+
+  buyer3:
+    image: stepapp-bot
+    command: ['python', 'app/buyer.py']
+    restart: always
+    depends_on:
+      - redis
+    volumes:
+      - .:/opt/app
+    environment:
+      - DEBUG=true
+      - ENVIRONMENT=development
+      - PYTHONUNBUFFERED=1
+      - REDIS_URL=redis://default:${REDIS_PASSWORD}@redis:63179/0
+      - EMAIL=piste.cloths-0j@icloud.com
+      - PASSWORD=${PASSWORD}
+      - MAX_PRICE=7000

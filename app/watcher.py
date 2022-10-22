@@ -52,7 +52,9 @@ async def check_shoeboxes(bot, redis):
             await redis.set(f'shoebox:{item["sellingId"]}', json.dumps(item))
             new_items.append(item)
 
-    if not items:
+    if items:
+        print('---')
+    else:
         print(f'Heartbeat {dt.datetime.now()}')
 
     if not new_items:

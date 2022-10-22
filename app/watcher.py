@@ -53,7 +53,7 @@ async def check_shoeboxes(bot, redis):
             new_items.append(item)
 
     if items:
-        print('---')
+        print(f'--- {dt.datetime.now()}')
     else:
         print(f'Heartbeat {dt.datetime.now()}')
 

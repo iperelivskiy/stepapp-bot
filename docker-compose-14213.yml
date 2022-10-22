@@ -2,9 +2,10 @@ version: '3'
 
 services:
 
-  buyer1:
+  watcher:
+    build: .
     image: stepapp-bot
-    command: ['python', 'app/buyer.py']
+    command: ['python', 'app/watcher.py']
     restart: always
     depends_on:
       - redis
@@ -14,12 +15,22 @@ services:
       - DEBUG=true
       - ENVIRONMENT=development
       - PYTHONUNBUFFERED=1
-      - REDIS_URL=${REDIS_URL}
-      - EMAIL=scoots-grassy-0h@icloud.com
+      - REDIS_URL=redis://default:${REDIS_PASSWORD}@redis:6379/0
+      - EMAIL=piste.cloths-0j@icloud.com
       - PASSWORD=${PASSWORD}
-      - MAX_PRICE=7000
 
-  buyer2:
+  redis:
+    image: redis
+    volumes:
+      - ./data/redis:/data
+    ports:
+      - 63179:6379
+    expose:
+      - "6379"
+    environment:
+      - REDIS_HOST_PASSWORD=${REDIS_PASSWORD}
+
+  buyer:
     image: stepapp-bot
     command: ['python', 'app/buyer.py']
     restart: always
@@ -31,7 +42,7 @@ services:
       - DEBUG=true
       - ENVIRONMENT=development
       - PYTHONUNBUFFERED=1
-      - REDIS_URL=${REDIS_URL}
-      - EMAIL=corner-biliary0l@icloud.com
+      - REDIS_URL=redis://default:${REDIS_PASSWORD}@redis:6379/0
+      - EMAIL=piste.cloths-0j@icloud.com
       - PASSWORD=${PASSWORD}
       - MAX_PRICE=7000

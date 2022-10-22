@@ -1,4 +1,5 @@
 import asyncio
+import datetime as dt
 import json
 import os
 import random
@@ -50,6 +51,9 @@ async def check_shoeboxes(bot, redis):
         else:
             await redis.set(f'shoebox:{item["sellingId"]}', json.dumps(item))
             new_items.append(item)
+
+    if not items:
+        print(f'Heartbeat {dt.datetime.now()}')
 
     if not new_items:
         return

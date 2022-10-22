@@ -45,7 +45,7 @@ def is_allowed(item):
     return True
 
 
-def buy(item):
+async def buy(item, bot):
     print(f'BUYING for {EMAIL}', item)
     data = {'params': {'sellingId': item['sellingId']}}
 
@@ -55,13 +55,14 @@ def buy(item):
     except Exception as e:
         print(f'BUYING ERROR for {EMAIL}', e)
     else:
+        await bot.send_message(TELEGRAM_CHANNEL_ID, f'Buy success ({EMAIL})')
         print(resp.status_code)
         print(resp.text)
 
     print('---')
 
 
-async def check_sellings(bot, cur_sellings):
+async def check_sellings(cur_sellings, bot):
     resp = requests.post('https://prd-api.step.app/game/1/user/getCurrent', headers=auth.get_headers(), verify=False, timeout=2)
 
     try:
@@ -80,8 +81,9 @@ async def check_sellings(bot, cur_sellings):
     return sellings
 
 
-async def reader(channel: aioredis.client.PubSub):
+async def reader(channel: aioredis.client.PubSub, bot):
     print(f'Reader started for {EMAIL}')
+
     while True:
         try:
             async with async_timeout.timeout(1):
@@ -93,7 +95,7 @@ async def reader(channel: aioredis.client.PubSub):
                         pass
                     else:
                         if is_allowed(item):
-                            asyncio.create_task(asyncio.to_thread(buy, item))
+                            asyncio.create_task(asyncio.to_thread(buy, item, bot))
         except asyncio.TimeoutError:
             pass
         finally:
@@ -117,7 +119,7 @@ async def main():
 
         while True:
             try:
-                current_sellings = await check_sellings(bot, current_sellings)
+                current_sellings = await check_sellings(current_sellings, bot)
             except Exception as e:
                 print('check_sellings', e)
 
@@ -134,7 +136,7 @@ async def main():
 
     async with pubsub as p:
         await p.subscribe('shoeboxes')
-        await reader(p)
+        await reader(p, bot)
         await p.unsubscribe('shoeboxes')
 
     check_sellings_loop_task.cancel()

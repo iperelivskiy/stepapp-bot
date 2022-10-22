@@ -3,6 +3,7 @@ version: '3'
 services:
 
   buyer1:
+    build: .
     image: stepapp-bot
     command: ['python', 'app/buyer.py']
     restart: always

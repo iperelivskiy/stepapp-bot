@@ -47,3 +47,18 @@ services:
       - EMAIL=hotbed.paddle.0a@icloud.com
       - PASSWORD=${PASSWORD}
       - MAX_PRICE=7000
+
+  buyer4:
+    image: stepapp-bot
+    command: ['python', 'app/buyer.py']
+    restart: always
+    volumes:
+      - .:/opt/app
+    environment:
+      - DEBUG=true
+      - ENVIRONMENT=development
+      - PYTHONUNBUFFERED=1
+      - REDIS_URL=${REDIS_URL}
+      - EMAIL=concord06_booker@icloud.com
+      - PASSWORD=${PASSWORD}
+      - MAX_PRICE=7000

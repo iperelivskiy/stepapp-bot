@@ -45,26 +45,102 @@ def is_allowed(item):
     return True
 
 
-async def buy(item, bot):
-
+async def buy_shoebox(item, bot):
     def request():
         print(f'BUYING for {EMAIL}', item)
         data = {'params': {'sellingId': item['sellingId']}}
+        resp = None
 
         try:
             resp = requests.post('https://prd-api.step.app/game/1/market/buyShoeBox', headers=auth.get_headers(), json=data, verify=False)
             resp.raise_for_status()
+            return resp.json()['result']['?????']
         except Exception as e:
             print(f'BUYING ERROR for {EMAIL}', e)
-        else:
-            print(resp.status_code)
-            print(resp.text)
-            return True
+        finally:
+            if resp:
+                print(resp.status_code, resp.text, '\n---')
 
-    result = await asyncio.to_thread(request)
+    shoebox = await asyncio.to_thread(request)
 
-    if result:
-        await bot.send_message(TELEGRAM_CHANNEL_ID, f'{EMAIL}\nBuy success')
+    if shoebox:
+        await bot.send_message(TELEGRAM_CHANNEL_ID, f'{EMAIL}\nBought shoebox')
+        asyncio.create_task(open_shoebox(shoebox, bot))
+
+
+async def open_shoebox(shoebox, bot):
+    data = {'params': {}}
+    resp = None
+    sneaker = None
+
+    try:
+        resp = requests.post('https://prd-api.step.app/????', headers=auth.get_headers(), json=data, verify=False)
+        resp.raise_for_status()
+        sneaker = resp.json()['result']['?????']
+    except Exception as e:
+        print(f'OPEN SHOEBOX ERROR for {EMAIL}', e)
+    finally:
+        if resp:
+            print(resp.status_code, resp.text, '\n---')
+
+    if sneaker:
+        await sell_sneaker(sneaker, bot)
+
+
+async def sell_sneaker(sneaker, bot):
+    price = get_sneaker_price(sneaker)
+
+    if not price:
+        await bot.send_message(TELEGRAM_CHANNEL_ID, f'{EMAIL}\nCould not determine price for sale: {sneaker["some_id????"]}')
+        return
+
+    data = {'params': {}}
+    resp = None
+    selling = None
+
+    try:
+        resp = requests.post('https://prd-api.step.app/????', headers=auth.get_headers(), json=data, verify=False)
+        resp.raise_for_status()
+        selling = resp.json()['result']['?????']
+    except Exception as e:
+        print(f'SELL SNEAKER ERROR for {EMAIL}', e)
+    finally:
+        if resp:
+            print(resp.status_code, resp.text, '\n---')
+
+    if selling:
+        await bot.send_message(TELEGRAM_CHANNEL_ID, f'{EMAIL}\nNew sneaker sale: {sneaker["some_id????"]} for {price} FI')
+
+
+def get_sneaker_price(sneaker):
+    """
+    1 - Coach
+    2 - Walker
+    3 - Hiker
+    4 - Racer
+    """
+    if sneaker['staticShoeBoxRarityId'] != 1:
+        return None
+
+    if sneaker['staticSneakerTypeId'] == 1:
+        price = 14000
+    elif sneaker['staticSneakerTypeId'] in [2, 3]:
+        price = 12000
+    else:
+        price = 10000
+
+    base = get_sneaker_base()
+
+    if 25 < base <= 30:
+        price += 500
+    elif 30 < base <= 35:
+        price += 1000
+    elif 35 < base <= 40:
+        price += 2000
+    elif base > 40:
+        return None
+
+    return price
 
 
 async def check_sellings(cur_sellings, bot):
@@ -100,7 +176,7 @@ async def reader(channel: aioredis.client.PubSub, bot):
                         pass
                     else:
                         if is_allowed(item):
-                            asyncio.create_task(buy(item, bot))
+                            asyncio.create_task(buy_shoebox(item, bot))
         except asyncio.TimeoutError:
             pass
         finally:

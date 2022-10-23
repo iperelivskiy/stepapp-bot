@@ -2,10 +2,10 @@ version: '3'
 
 services:
 
-  buyer1:
+  agent1:
     build: .
     image: stepapp-bot
-    command: ['python', 'app/buyer.py']
+    command: ['python', 'app/agent.py']
     restart: always
     volumes:
       - .:/opt/app
@@ -18,9 +18,9 @@ services:
       - PASSWORD=${PASSWORD}
       - MAX_PRICE=7000
 
-  buyer2:
+  agent2:
     image: stepapp-bot
-    command: ['python', 'app/buyer.py']
+    command: ['python', 'app/agent.py']
     restart: always
     volumes:
       - .:/opt/app
@@ -33,9 +33,9 @@ services:
       - PASSWORD=${PASSWORD}
       - MAX_PRICE=7000
 
-  buyer3:
+  agent3:
     image: stepapp-bot
-    command: ['python', 'app/buyer.py']
+    command: ['python', 'app/agent.py']
     restart: always
     volumes:
       - .:/opt/app
@@ -48,9 +48,9 @@ services:
       - PASSWORD=${PASSWORD}
       - MAX_PRICE=7000
 
-  buyer4:
+  agent4:
     image: stepapp-bot
-    command: ['python', 'app/buyer.py']
+    command: ['python', 'app/agent.py']
     restart: always
     volumes:
       - .:/opt/app
@@ -63,9 +63,9 @@ services:
       - PASSWORD=${PASSWORD}
       - MAX_PRICE=7000
 
-  buyer5:
+  agent5:
     image: stepapp-bot
-    command: ['python', 'app/buyer.py']
+    command: ['python', 'app/agent.py']
     restart: always
     volumes:
       - .:/opt/app

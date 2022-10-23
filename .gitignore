@@ -1,6 +1,7 @@
 auth.json
 cache.json
 telegram
+data
 
 .vscode/
 *.code-workspace

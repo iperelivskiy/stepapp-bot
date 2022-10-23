@@ -21,12 +21,14 @@ services:
 
   redis:
     image: redis
+    volumes:
+      - ./data/redis:/data
     ports:
       - 6379:6379
 
-  buyer1:
+  agent1:
     image: stepapp-bot
-    command: ['python', 'app/buyer.py']
+    command: ['python', 'app/agent.py']
     restart: always
     depends_on:
       - redis
@@ -41,9 +43,9 @@ services:
       - PASSWORD=${PASSWORD}
       - MAX_PRICE=7000
 
-  buyer2:
+  agent2:
     image: stepapp-bot
-    command: ['python', 'app/buyer.py']
+    command: ['python', 'app/agent.py']
     restart: always
     depends_on:
       - redis

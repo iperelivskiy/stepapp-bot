@@ -62,7 +62,14 @@ async def check_shoeboxes(bot, redis):
     for item in new_items:
         await redis.publish('shoeboxes', json.dumps(item))
 
-    message = '\n'.join(f'{i["priceFitfi"]} FI' for i in new_items)
+    types = {
+        1: 'Coach',
+        2: 'Walker',
+        3: 'Hiker',
+        4: 'Racer'
+    }
+
+    message = '\n'.join(f'{i["priceFitfi"]}FI {types[i["staticSneakerTypeId"]]}' for i in new_items)
     await bot.send_message(TELEGRAM_CHANNEL_ID, f'New shoeboxes:\n{message}')
 
 

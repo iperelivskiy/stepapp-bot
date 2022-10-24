@@ -38,7 +38,7 @@ def is_allowed(item):
     if item['priceFitfi'] > MAX_PRICE:
         return False
 
-    if item['staticSneakerTypeId'] == 4 and item['staticShoeBoxRarityId'] == 1 and item['priceFitfi'] > 4000:
+    if item['staticSneakerTypeId'] in [2, 4] and item['staticShoeBoxRarityId'] == 1 and item['priceFitfi'] > 4000:
         # Aint buying common walkers and racers with price over 4000 FI
         return False
 

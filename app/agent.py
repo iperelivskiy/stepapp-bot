@@ -38,7 +38,7 @@ def is_allowed(item):
     if item['priceFitfi'] > MAX_PRICE:
         return False
 
-    if item['staticSneakerTypeId'] in [2, 3, 4] and item['staticShoeBoxRarityId'] == 1 and item['priceFitfi'] > 4000:
+    if item['staticSneakerTypeId'] == 4 and item['staticShoeBoxRarityId'] == 1 and item['priceFitfi'] > 4000:
         # Aint buying common walkers and racers with price over 4000 FI
         return False
 
@@ -54,18 +54,19 @@ async def buy_shoebox(item, bot):
         try:
             resp = requests.post('https://prd-api.step.app/game/1/market/buyShoeBox', headers=auth.get_headers(), json=data, verify=False)
             resp.raise_for_status()
-            return resp.json()['result']['?????']
+            return True
+            # return resp.json()['result']['?????']
         except Exception as e:
             print(f'BUYING ERROR for {EMAIL}', e)
         finally:
-            if resp:
-                print(resp.status_code, resp.text, '\n---')
+            if resp is not None:
+                print(resp.status_code, resp.text)
 
     shoebox = await asyncio.to_thread(request)
 
     if shoebox:
         await bot.send_message(TELEGRAM_CHANNEL_ID, f'{EMAIL}\nBought shoebox')
-        asyncio.create_task(open_shoebox(shoebox, bot))
+        # asyncio.create_task(open_shoebox(shoebox, bot))
 
 
 async def open_shoebox(shoebox, bot):
@@ -80,8 +81,8 @@ async def open_shoebox(shoebox, bot):
     except Exception as e:
         print(f'OPEN SHOEBOX ERROR for {EMAIL}', e)
     finally:
-        if resp:
-            print(resp.status_code, resp.text, '\n---')
+        if resp is not None:
+            print(resp.status_code, resp.text)
 
     if sneaker:
         await sell_sneaker(sneaker, bot)
@@ -105,8 +106,8 @@ async def sell_sneaker(sneaker, bot):
     except Exception as e:
         print(f'SELL SNEAKER ERROR for {EMAIL}', e)
     finally:
-        if resp:
-            print(resp.status_code, resp.text, '\n---')
+        if resp is not None:
+            print(resp.status_code, resp.text)
 
     if selling:
         await bot.send_message(TELEGRAM_CHANNEL_ID, f'{EMAIL}\nNew sneaker sale: {sneaker["some_id????"]} for {price} FI')

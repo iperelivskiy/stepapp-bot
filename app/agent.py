@@ -46,6 +46,7 @@ def is_allowed(item):
 
 
 async def buy_shoebox(item, bot):
+
     def request():
         print(f'BUYING for {EMAIL}', item)
         data = {'params': {'sellingId': item['sellingId']}}

@@ -16,7 +16,7 @@ services:
       - REDIS_URL=${REDIS_URL}
       - EMAIL=scoots-grassy-0h@icloud.com
       - PASSWORD=${PASSWORD}
-      - MAX_PRICE=7000
+      - MAX_PRICE=${MAX_PRICE}
 
   agent2:
     image: stepapp-bot
@@ -31,7 +31,7 @@ services:
       - REDIS_URL=${REDIS_URL}
       - EMAIL=corner-biliary0l@icloud.com
       - PASSWORD=${PASSWORD}
-      - MAX_PRICE=7000
+      - MAX_PRICE=${MAX_PRICE}
 
   agent3:
     image: stepapp-bot
@@ -46,7 +46,7 @@ services:
       - REDIS_URL=${REDIS_URL}
       - EMAIL=flouncy_regent0l@icloud.com
       - PASSWORD=${PASSWORD}
-      - MAX_PRICE=7000
+      - MAX_PRICE=${MAX_PRICE}
 
   agent4:
     image: stepapp-bot
@@ -61,7 +61,7 @@ services:
       - REDIS_URL=${REDIS_URL}
       - EMAIL=beers.dares.0n@icloud.com
       - PASSWORD=${PASSWORD}
-      - MAX_PRICE=7000
+      - MAX_PRICE=${MAX_PRICE}
 
   agent5:
     image: stepapp-bot
@@ -76,7 +76,7 @@ services:
       - REDIS_URL=${REDIS_URL}
       - EMAIL=congers_coldest0u@icloud.com
       - PASSWORD=${PASSWORD}
-      - MAX_PRICE=7000
+      - MAX_PRICE=${MAX_PRICE}
 
   agent6:
     image: stepapp-bot
@@ -91,7 +91,7 @@ services:
       - REDIS_URL=${REDIS_URL}
       - EMAIL=boss-02-pendant@icloud.com
       - PASSWORD=${PASSWORD}
-      - MAX_PRICE=7000
+      - MAX_PRICE=${MAX_PRICE}
 
   agent7:
     image: stepapp-bot
@@ -106,7 +106,7 @@ services:
       - REDIS_URL=${REDIS_URL}
       - EMAIL=00.whom_cosy@icloud.com
       - PASSWORD=${PASSWORD}
-      - MAX_PRICE=7000
+      - MAX_PRICE=${MAX_PRICE}
 
   agent8:
     image: stepapp-bot
@@ -121,7 +121,7 @@ services:
       - REDIS_URL=${REDIS_URL}
       - EMAIL=ferrets.07.discs@icloud.com
       - PASSWORD=${PASSWORD}
-      - MAX_PRICE=7000
+      - MAX_PRICE=${MAX_PRICE}
 
   agent9:
     image: stepapp-bot
@@ -136,4 +136,4 @@ services:
       - REDIS_URL=${REDIS_URL}
       - EMAIL=sixfold_octave.0w@icloud.com
       - PASSWORD=${PASSWORD}
-      - MAX_PRICE=7000
+      - MAX_PRICE=${MAX_PRICE}

@@ -122,3 +122,18 @@ services:
       - EMAIL=ash_ban_0t@icloud.com
       - PASSWORD=${PASSWORD}
       - MAX_PRICE=${MAX_PRICE}
+
+  agent9:
+    image: stepapp-bot
+    command: ['python', 'app/agent.py']
+    restart: always
+    volumes:
+      - .:/opt/app
+    environment:
+      - DEBUG=true
+      - ENVIRONMENT=development
+      - PYTHONUNBUFFERED=1
+      - REDIS_URL=${REDIS_URL}
+      - EMAIL=budget_maxi0o@icloud.com
+      - PASSWORD=${PASSWORD}
+      - MAX_PRICE=${MAX_PRICE}

@@ -68,51 +68,85 @@ async def buy_shoebox(item, bot):
 
     if success:
         await bot.send_message(TELEGRAM_CHANNEL_ID, f'{EMAIL}\nBought shoebox {TYPES[item["staticSneakerTypeId"]]}')
-        # asyncio.create_task(open_shoebox(shoebox, bot))
+        # cost_prices = {item['networkTokenId']: item['priceFitfi']}
+        # asyncio.create_task(open_shoeboxes_and_sell(cost_prices, bot))
 
 
-async def open_shoebox(shoebox, cost_price, bot):
-    data = {'params': {}}
+async def open_shoeboxes_and_sell(cost_prices, bot):
     resp = None
-    sneaker = None
 
     try:
-        resp = requests.post('https://prd-api.step.app/????', headers=auth.get_headers(), json=data, verify=False)
+        resp = requests.post('https://prd-api.step.app/game/1/user/getCurrent', headers=auth.get_headers(), verify=False)
         resp.raise_for_status()
-        sneaker = resp.json()['result']['?????']
-    except Exception as e:
-        print(f'OPEN SHOEBOX ERROR for {EMAIL}', e)
+        items = list(resp.json()['result']['changes']['dynItems']['updated'])
+    except (TypeError, KeyError):
+        # No shoeboxes to open
+        return
+    except Exception:
+        raise
     finally:
         if resp is not None:
-            print(resp.status_code, resp.text)
+            print(resp.status_code, 'open_shoeboxes_and_sell', resp.text, '\n---')
 
-    if sneaker:
-        await sell_sneaker(sneaker, cost_price, bot)
+    for item in items:
+        # cost_prices[item['shoeBox']['networkTokenId']] = 8000
+
+        if item.get('shoeBox') and item['shoeBox']['networkTokenId'] in cost_prices:
+            cost_price = cost_prices[item['shoeBox']['networkTokenId']]
+            assert cost_price >= 8000
+            sneaker = await open_shoebox(item)
+            await sell_sneaker(sneaker, cost_price, bot)
+
+
+async def open_shoebox(shoebox):
+    data = {'params': {'shoeBoxDynItemId': shoebox['id']}}
+    resp = None
+
+    try:
+        resp = requests.post('https://prd-api.step.app/game/1/shoeBox/seen', headers=auth.get_headers(), json=data, verify=False)
+        resp.raise_for_status()
+        resp = requests.post('https://prd-api.step.app/game/1/shoeBox/open', headers=auth.get_headers(), json=data, verify=False)
+        resp.raise_for_status()
+        sneaker = resp.json()['result']['changes']['dynSneakers']['updated'][0]
+        assert sneaker['networkTokenId'] == shoebox['shoeBox']['networkTokenId']
+    except Exception as e:
+        print(f'OPEN SHOEBOX ERROR for {EMAIL}', e)
+        raise
+    finally:
+        if resp is not None:
+            print(resp.status_code, 'open_shoebox', resp.text, '\n---')
+
+    return sneaker
 
 
 async def sell_sneaker(sneaker, cost_price, bot):
     price = get_sneaker_price(sneaker, cost_price)
 
     if not price:
-        await bot.send_message(TELEGRAM_CHANNEL_ID, f'{EMAIL}\nCould not determine price for sale: {sneaker["some_id????"]}')
+        await bot.send_message(
+            TELEGRAM_CHANNEL_ID,
+            f'{EMAIL}\nCould not determine price for {TYPES[sneaker["staticSneakerTypeId"]]} {sneaker["networkTokenId"]}'
+        )
         return
 
-    data = {'params': {}}
+    data = {'params': {'dynSneakerId': sneaker['id'], 'priceFitfiAmount': str(price)}}
     resp = None
-    selling = None
 
     try:
-        resp = requests.post('https://prd-api.step.app/????', headers=auth.get_headers(), json=data, verify=False)
+        resp = requests.post('https://prd-api.step.app/game/1/market/sellSneaker', headers=auth.get_headers(), json=data, verify=False)
         resp.raise_for_status()
-        selling = resp.json()['result']['?????']
     except Exception as e:
         print(f'SELL SNEAKER ERROR for {EMAIL}', e)
+        raise
     finally:
         if resp is not None:
-            print(resp.status_code, resp.text)
+            print(resp.status_code, resp.text, '\n---')
 
-    if selling:
-        await bot.send_message(TELEGRAM_CHANNEL_ID, f'{EMAIL}\nNew sneaker sale: {sneaker["some_id????"]} for {price} FI')
+    if resp:
+        await bot.send_message(
+            TELEGRAM_CHANNEL_ID,
+            f'{EMAIL}\nNew sneaker for sale:\n{price} FI {TYPES[sneaker["staticSneakerTypeId"]]} {sneaker["networkTokenId"]}'
+        )
 
 
 def get_sneaker_price(sneaker, cost_price):
@@ -126,24 +160,26 @@ def get_sneaker_price(sneaker, cost_price):
         return None
 
     if sneaker['staticSneakerTypeId'] == 1:
-        price = int((cost_price + 5000) / 0.8)
+        price = (cost_price + 5000) / 0.8
     elif sneaker['staticSneakerTypeId'] in [2, 3]:
-        price = int((cost_price + 3000) / 0.8)
+        price = (cost_price + 3000) / 0.8
     else:
-        price = int((cost_price + 1000) / 0.8)
+        price = (cost_price + 1000) / 0.8
 
     base = sum([sneaker['baseEfficiency'] + sneaker['baseLuck'] + sneaker['baseComfort'] + sneaker['baseResilience']])
 
-    if 25 < base <= 30:
+    if base <= 30:
         price += 1000
     elif 30 < base <= 35:
         price += 2000
     elif 35 < base <= 40:
-        price += 3000
+        price += 4000
     elif base > 40:
+        # price += base * 180
+        # price += 6000 + (base - 40) * 300
         return None
 
-    return price
+    return price + 200
 
 
 async def check_sellings(cur_sellings, bot):
@@ -245,3 +281,16 @@ if __name__ == '__main__':
             sys.exit(0)
         except SystemExit:
             os._exit(0)
+
+
+# async def test():
+#     telegram_dir = os.path.join(os.path.dirname(__file__), '..', 'telegram')
+#     session = os.path.join(telegram_dir, f'bot-{hashlib.md5(EMAIL.encode()).hexdigest()}')
+#     client = TelegramClient(session, TELEGRAM_APP_ID, TELEGRAM_APP_TOKEN)
+#     bot = await client.start(bot_token=TELEGRAM_BOT_TOKEN)
+#     await open_shoeboxes_and_sell({}, bot)
+#     await bot.disconnect()
+
+
+# if __name__ == '__main__':
+#     asyncio.run(test())

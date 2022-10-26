@@ -19,11 +19,19 @@ import auth
 ENV = Env()
 REDIS_URL = ENV.str('REDIS_URL')
 EMAIL = ENV.str('EMAIL')
+MAX_PRICE = ENV.int('MAX_PRICE', 8000)
 
 TELEGRAM_APP_ID = 5145344
 TELEGRAM_APP_TOKEN = '1a822dccf4c1fe151eceba3cec24958f'
 TELEGRAM_BOT_TOKEN = '5600428438:AAFgSPZWK18FSmzMhAHRoeOBhhiy967hDhU'
 TELEGRAM_CHANNEL_ID = -1001807612189
+
+TYPES = {
+    1: 'Coach',
+    2: 'Walker',
+    3: 'Hiker',
+    4: 'Racer'
+}
 
 
 async def check_shoeboxes(bot, redis):
@@ -60,17 +68,31 @@ async def check_shoeboxes(bot, redis):
     new_items.sort(key=lambda x: x['priceFitfi'])
 
     for item in new_items:
-        await redis.publish('shoeboxes', json.dumps(item))
+        if is_allowed(item):
+            await redis.publish('shoeboxes', json.dumps(item))
 
-    types = {
-        1: 'Coach',
-        2: 'Walker',
-        3: 'Hiker',
-        4: 'Racer'
-    }
-
-    message = '\n'.join(f'{i["priceFitfi"]}FI {types[i["staticSneakerTypeId"]]}' for i in new_items)
+    message = '\n'.join(f'{i["priceFitfi"]}FI {TYPES[i["staticSneakerTypeId"]]}' for i in new_items)
     await bot.send_message(TELEGRAM_CHANNEL_ID, f'New shoeboxes:\n{message}')
+
+
+def is_allowed(item):
+    """
+    1 - Coach
+    2 - Walker
+    3 - Hiker
+    4 - Racer
+    """
+    if item['priceFitfi'] > MAX_PRICE:
+        return False
+
+    # if item['staticSneakerTypeId'] in [2, 4] and item['staticShoeBoxRarityId'] == 1 and item['priceFitfi'] > 4000:
+    #     # Aint buying common walkers and racers with price over 4000 FI
+    #     return False
+
+    if item['staticSneakerTypeId'] not in [1]:
+        return False
+
+    return True
 
 
 async def main():

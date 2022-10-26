@@ -19,7 +19,6 @@ import auth
 
 ENV = Env()
 REDIS_URL = ENV.str('REDIS_URL')
-MAX_PRICE = ENV.int('MAX_PRICE')
 EMAIL = ENV.str('EMAIL')
 
 TELEGRAM_APP_ID = 5145344
@@ -34,17 +33,6 @@ TYPES = {
     3: 'Hiker',
     4: 'Racer'
 }
-
-
-def is_allowed(item):
-    if item['priceFitfi'] > MAX_PRICE:
-        return False
-
-    if item['staticSneakerTypeId'] in [2, 4] and item['staticShoeBoxRarityId'] == 1 and item['priceFitfi'] > 4000:
-        # Aint buying common walkers and racers with price over 4000 FI
-        return False
-
-    return True
 
 
 async def buy_shoebox(item, bot):
@@ -67,7 +55,7 @@ async def buy_shoebox(item, bot):
     success = await asyncio.to_thread(request)
 
     if success:
-        await bot.send_message(TELEGRAM_CHANNEL_ID, f'{EMAIL}\nBought shoebox {TYPES[item["staticSneakerTypeId"]]}')
+        await bot.send_message(TELEGRAM_CHANNEL_ID, f'{EMAIL}\nBought {TYPES[item["staticSneakerTypeId"]]} shoebox')
         # cost_prices = {item['networkTokenId']: item['priceFitfi']}
         # asyncio.create_task(open_shoeboxes_and_sell(cost_prices, bot))
 
@@ -214,8 +202,7 @@ async def reader(channel: aioredis.client.PubSub, bot):
                     except Exception:
                         pass
                     else:
-                        if is_allowed(item):
-                            asyncio.create_task(buy_shoebox(item, bot))
+                        asyncio.create_task(buy_shoebox(item, bot))
         except asyncio.TimeoutError:
             pass
         finally:

@@ -41,7 +41,6 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - EMAIL=piste.cloths-0j@icloud.com
       - PASSWORD=${PASSWORD}
-      - MAX_PRICE=7000
 
   # agent2:
   #   image: stepapp-bot
@@ -58,4 +57,19 @@ services:
   #     - REDIS_URL=redis://redis:6379/0
   #     - EMAIL=joule.05-sobs@icloud.com
   #     - PASSWORD=${PASSWORD}
-  #     - MAX_PRICE=7000
+
+  # testagent:
+  #   image: stepapp-bot
+  #   command: ['python', 'app/agent.py']
+  #   restart: always
+  #   depends_on:
+  #     - redis
+  #   volumes:
+  #     - .:/opt/app
+  #   environment:
+  #     - DEBUG=true
+  #     - ENVIRONMENT=development
+  #     - PYTHONUNBUFFERED=1
+  #     - REDIS_URL=redis://redis:6379/0
+  #     - EMAIL=courage-hydride-0w@icloud.com
+  #     - PASSWORD=${PASSWORD}

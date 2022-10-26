@@ -28,13 +28,15 @@ TELEGRAM_BOT_TOKEN = '5600428438:AAFgSPZWK18FSmzMhAHRoeOBhhiy967hDhU'
 TELEGRAM_CHANNEL_ID = -1001807612189
 
 
+TYPES = {
+    1: 'Coach',
+    2: 'Walker',
+    3: 'Hiker',
+    4: 'Racer'
+}
+
+
 def is_allowed(item):
-    """
-    1 - Coach
-    2 - Walker
-    3 - Hiker
-    4 - Racer
-    """
     if item['priceFitfi'] > MAX_PRICE:
         return False
 
@@ -56,21 +58,20 @@ async def buy_shoebox(item, bot):
             resp = requests.post('https://prd-api.step.app/game/1/market/buyShoeBox', headers=auth.get_headers(), json=data, verify=False)
             resp.raise_for_status()
             return True
-            # return resp.json()['result']['?????']
         except Exception as e:
             print(f'BUYING ERROR for {EMAIL}', e)
         finally:
             if resp is not None:
                 print(resp.status_code, resp.text)
 
-    shoebox = await asyncio.to_thread(request)
+    success = await asyncio.to_thread(request)
 
-    if shoebox:
-        await bot.send_message(TELEGRAM_CHANNEL_ID, f'{EMAIL}\nBought shoebox')
+    if success:
+        await bot.send_message(TELEGRAM_CHANNEL_ID, f'{EMAIL}\nBought shoebox {TYPES[item["staticSneakerTypeId"]]}')
         # asyncio.create_task(open_shoebox(shoebox, bot))
 
 
-async def open_shoebox(shoebox, bot):
+async def open_shoebox(shoebox, cost_price, bot):
     data = {'params': {}}
     resp = None
     sneaker = None
@@ -86,11 +87,11 @@ async def open_shoebox(shoebox, bot):
             print(resp.status_code, resp.text)
 
     if sneaker:
-        await sell_sneaker(sneaker, bot)
+        await sell_sneaker(sneaker, cost_price, bot)
 
 
-async def sell_sneaker(sneaker, bot):
-    price = get_sneaker_price(sneaker)
+async def sell_sneaker(sneaker, cost_price, bot):
+    price = get_sneaker_price(sneaker, cost_price)
 
     if not price:
         await bot.send_message(TELEGRAM_CHANNEL_ID, f'{EMAIL}\nCould not determine price for sale: {sneaker["some_id????"]}')
@@ -114,31 +115,31 @@ async def sell_sneaker(sneaker, bot):
         await bot.send_message(TELEGRAM_CHANNEL_ID, f'{EMAIL}\nNew sneaker sale: {sneaker["some_id????"]} for {price} FI')
 
 
-def get_sneaker_price(sneaker):
+def get_sneaker_price(sneaker, cost_price):
     """
     1 - Coach
     2 - Walker
     3 - Hiker
     4 - Racer
     """
-    if sneaker['staticShoeBoxRarityId'] != 1:
+    if sneaker['staticSneakerRarityId'] != 1 or sneaker['staticSneakerRankId'] != 1:
         return None
 
     if sneaker['staticSneakerTypeId'] == 1:
-        price = 14000
+        price = int((cost_price + 5000) / 0.8)
     elif sneaker['staticSneakerTypeId'] in [2, 3]:
-        price = 12000
+        price = int((cost_price + 3000) / 0.8)
     else:
-        price = 10000
+        price = int((cost_price + 1000) / 0.8)
 
-    base = get_sneaker_base()
+    base = sum([sneaker['baseEfficiency'] + sneaker['baseLuck'] + sneaker['baseComfort'] + sneaker['baseResilience']])
 
     if 25 < base <= 30:
-        price += 500
-    elif 30 < base <= 35:
         price += 1000
-    elif 35 < base <= 40:
+    elif 30 < base <= 35:
         price += 2000
+    elif 35 < base <= 40:
+        price += 3000
     elif base > 40:
         return None
 

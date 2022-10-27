@@ -18,6 +18,7 @@ services:
       - REDIS_URL=redis://default:${REDIS_PASSWORD}@redis:6379/0
       - EMAIL=piste.cloths-0j@icloud.com
       - PASSWORD=${PASSWORD}
+      - MAX_PRICE=${MAX_PRICE}
 
   redis:
     image: redis

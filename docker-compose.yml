@@ -18,6 +18,7 @@ services:
       - EMAIL=piste.cloths-0j@icloud.com
       - PASSWORD=${PASSWORD}
       - REDIS_URL=redis://redis:6379/0
+      - MAX_PRICE=1000
 
   redis:
     image: redis

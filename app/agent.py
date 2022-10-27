@@ -35,7 +35,7 @@ TYPES = {
 }
 
 
-async def buy_shoebox(item, bot):
+async def buy_shoebox(item, bot, set_cooldown):
 
     def request():
         print(f'BUYING for {EMAIL}', item)
@@ -56,6 +56,7 @@ async def buy_shoebox(item, bot):
 
     if success:
         await bot.send_message(TELEGRAM_CHANNEL_ID, f'{EMAIL}\nBought shoebox: {TYPES[item["staticSneakerTypeId"]]} {item["networkTokenId"]}')
+        await set_cooldown()
         # cost_prices = {item['networkTokenId']: item['priceFitfi']}
         # asyncio.create_task(open_shoeboxes_and_sell(cost_prices, bot))
 
@@ -189,20 +190,33 @@ async def check_sellings(cur_sellings, bot):
     return sellings
 
 
-async def reader(channel: aioredis.client.PubSub, bot):
+async def reader(channel: aioredis.client.PubSub, bot, lock):
     print(f'Reader started for {EMAIL}')
+
+    async def set_cooldown():
+        await lock.acquire()
+        asyncio.create_task(unset_cooldown_later())
+
+    async def unset_cooldown_later():
+        await asyncio.sleep(10 * 60)
+        lock.release()
 
     while True:
         try:
             async with async_timeout.timeout(1):
                 message = await channel.get_message(ignore_subscribe_messages=True)
+
+                if lock.locked():
+                    # Cooldown...
+                    continue
+
                 if message is not None:
                     try:
                         item = json.loads(message['data'])
                     except Exception:
                         pass
                     else:
-                        asyncio.create_task(buy_shoebox(item, bot))
+                        asyncio.create_task(buy_shoebox(item, bot, set_cooldown))
         except asyncio.TimeoutError:
             pass
         finally:
@@ -233,17 +247,18 @@ async def main():
             await asyncio.sleep(random.randint(30, 60))
 
     check_sellings_loop_task = asyncio.create_task(check_sellings_loop(bot))
+    lock = asyncio.Lock()
 
     async def heartbeat_loop():
         while True:
             await asyncio.sleep(30)
-            print(f'--- {dt.datetime.now()}')
+            print(f'--- {dt.datetime.now()}{["", " cooldown"][lock.locked()]}')
 
     heartbeat_loop_task = asyncio.create_task(heartbeat_loop())
 
     async with pubsub as p:
         await p.subscribe('shoeboxes')
-        await reader(p, bot)
+        await reader(p, bot, lock)
         await p.unsubscribe('shoeboxes')
 
     check_sellings_loop_task.cancel()

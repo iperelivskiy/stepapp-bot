@@ -55,8 +55,9 @@ async def buy_shoebox(item, bot, set_cooldown):
     success = await asyncio.to_thread(request)
 
     if success:
-        await bot.send_message(TELEGRAM_CHANNEL_ID, f'{EMAIL}\nBought shoebox: {TYPES[item["staticSneakerTypeId"]]} {item["networkTokenId"]}')
         await set_cooldown()
+        await bot.send_message(TELEGRAM_CHANNEL_ID, f'{EMAIL}\nBought shoebox: {TYPES[item["staticSneakerTypeId"]]} {item["networkTokenId"]}')
+
         # cost_prices = {item['networkTokenId']: item['priceFitfi']}
         # asyncio.create_task(open_shoeboxes_and_sell(cost_prices, bot))
 

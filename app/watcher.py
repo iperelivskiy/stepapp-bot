@@ -34,7 +34,7 @@ TYPES = {
 }
 
 
-async def check_shoeboxes(bot, redis):
+async def check_shoeboxes(redis, bot, set_aggressive_mode):
     data = {"params":{"skip":0,"sortOrder":"latest","take":10,"network":"avalanche"}}
     resp = requests.post('https://prd-api.step.app/market/selling/shoeBoxes', headers=auth.get_headers(), json=data, verify=False, timeout=2)
 
@@ -70,6 +70,7 @@ async def check_shoeboxes(bot, redis):
     for item in new_items:
         if is_allowed(item):
             await redis.publish('shoeboxes', json.dumps(item))
+            set_aggressive_mode()
 
     message = '\n'.join(f'{i["priceFitfi"]}FI {TYPES[i["staticSneakerTypeId"]]}' for i in new_items)
     await bot.send_message(TELEGRAM_CHANNEL_ID, f'New shoeboxes:\n{message}')
@@ -105,17 +106,31 @@ async def main():
     session = os.path.join(telegram_dir, f'bot-watcher')
     client = TelegramClient(session, TELEGRAM_APP_ID, TELEGRAM_APP_TOKEN)
     bot = await client.start(bot_token=TELEGRAM_BOT_TOKEN)
+    aggressive_mode = asyncio.Event()
+
+    def set_aggressive_mode():
+        aggressive_mode.set()
+        asyncio.create_task(unset_aggresive_mode_later())
+
+    async def unset_aggresive_mode_later():
+        await asyncio.sleep(15 * 60)
+        aggressive_mode.clear()
+
     print(f'Watcher started for {EMAIL}')
 
     while True:
         try:
-            await check_shoeboxes(bot, redis)
+            await check_shoeboxes(redis, bot, set_aggressive_mode)
         except Exception as e:
             print('check_shoeboxes', e)
             break
 
-        # time.sleep(random.randint(6, 12) / 10)
-        time.sleep(random.randint(10, 40) / 10)
+        if aggressive_mode.is_set():
+            print('--- aggressive mode')
+            await asyncio.sleep(0.4)
+        else:
+            print('--- calm mode')
+            await asyncio.sleep(random.randint(20, 50) / 10)
 
     await bot.disconnect()
     await redis.close()

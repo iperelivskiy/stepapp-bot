@@ -114,7 +114,8 @@ async def main():
             print('check_shoeboxes', e)
             break
 
-        time.sleep(random.randint(6, 12) / 10)
+        # time.sleep(random.randint(6, 12) / 10)
+        time.sleep(random.randint(10, 40) / 10)
 
     await bot.disconnect()
     await redis.close()

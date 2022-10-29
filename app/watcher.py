@@ -60,8 +60,6 @@ async def check_shoeboxes(redis, bot, set_aggressive_mode):
             await redis.set(f'shoebox:{item["sellingId"]}', json.dumps(item))
             new_items.append(item)
 
-    print(f'--- {dt.datetime.now()}')
-
     if not new_items:
         return
 
@@ -126,10 +124,10 @@ async def main():
             break
 
         if aggressive_mode.is_set():
-            print('--- aggressive mode')
+            print(f'--- {dt.datetime.now()} aggressive mode')
             await asyncio.sleep(0.4)
         else:
-            print('--- calm mode')
+            print(f'--- {dt.datetime.now()} calm mode')
             await asyncio.sleep(random.randint(20, 50) / 10)
 
     await bot.disconnect()

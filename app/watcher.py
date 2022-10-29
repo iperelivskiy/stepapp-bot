@@ -106,13 +106,19 @@ async def main():
     client = TelegramClient(session, TELEGRAM_APP_ID, TELEGRAM_APP_TOKEN)
     bot = await client.start(bot_token=TELEGRAM_BOT_TOKEN)
     aggressive_mode = asyncio.Event()
+    unset_aggresive_mode_tasks = []
 
     def set_aggressive_mode():
         aggressive_mode.set()
-        asyncio.create_task(unset_aggresive_mode_later())
 
-    async def unset_aggresive_mode_later():
-        await asyncio.sleep(15 * 60)
+        if unset_aggresive_mode_tasks:
+            unset_aggresive_mode_tasks[0].cancel()
+            unset_aggresive_mode_tasks.clear()
+
+        unset_aggresive_mode_tasks.append(asyncio.create_task(unset_aggresive_mode()))
+
+    async def unset_aggresive_mode():
+        await asyncio.sleep(60)
         aggressive_mode.clear()
 
     print(f'Watcher started for {EMAIL}')

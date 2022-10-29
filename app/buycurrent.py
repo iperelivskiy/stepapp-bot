@@ -38,6 +38,7 @@ async def check_shoeboxes(redis):
     items.sort(key=lambda x: x['priceFitfi'])
 
     for item in filter(is_allowed, items):
+        print(item)
         await redis.publish('shoeboxes', json.dumps(item))
 
 

@@ -65,10 +65,11 @@ async def check_shoeboxes(redis, bot, set_aggressive_mode):
 
     new_items.sort(key=lambda x: x['priceFitfi'])
 
-    for item in new_items:
-        if is_allowed(item):
-            await redis.publish('shoeboxes', json.dumps(item))
-            set_aggressive_mode()
+    if new_items[0]['priceFitfi'] <= MAX_PRICE:
+        set_aggressive_mode()
+
+    for item in filter(is_allowed, new_items):
+        await redis.publish('shoeboxes', json.dumps(item))
 
     message = '\n'.join(f'{i["priceFitfi"]}FI {TYPES[i["staticSneakerTypeId"]]}' for i in new_items)
     await bot.send_message(TELEGRAM_CHANNEL_ID, f'New shoeboxes:\n{message}')

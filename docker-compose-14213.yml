@@ -16,7 +16,7 @@ services:
       - ENVIRONMENT=development
       - PYTHONUNBUFFERED=1
       - REDIS_URL=redis://default:${REDIS_PASSWORD}@redis:6379/0
-      - EMAIL=piste.cloths-0j@icloud.com
+      - EMAIL=presto-repute0u@icloud.com
       - PASSWORD=${PASSWORD}
       - MAX_PRICE=${MAX_PRICE}
 

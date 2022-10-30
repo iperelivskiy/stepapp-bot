@@ -52,10 +52,7 @@ def is_allowed(item):
     if item['priceFitfi'] > MAX_PRICE:
         return False
 
-    if item['staticSneakerTypeId'] in [4]:
-        return False
-
-    return True
+    return item['staticSneakerTypeId'] in [1, 2, 3]
 
 
 async def main():

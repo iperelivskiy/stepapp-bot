@@ -85,14 +85,13 @@ def is_allowed(item):
     if item['priceFitfi'] > MAX_PRICE:
         return False
 
-    # if item['staticSneakerTypeId'] in [2, 4] and item['staticShoeBoxRarityId'] == 1 and item['priceFitfi'] > 4000:
-    #     # Aint buying common walkers and racers with price over 4000 FI
-    #     return False
+    if item['priceFitfi'] <= 4000:
+        return True
 
-    if item['staticSneakerTypeId'] not in [1]:
-        return False
+    if item['staticShoeBoxRarityId'] > 1:
+        return True
 
-    return True
+    return item['staticSneakerTypeId'] in [1]
 
 
 async def main():

@@ -194,7 +194,7 @@ async def check_sellings(cur_sellings, bot):
 
 
 async def reader(channel: aioredis.client.PubSub, bot, lock):
-    print(f'Reader started for {EMAIL}, channels: {channel.channels}')
+    print(f'Reader started for {EMAIL}, channels: {list(channel.channels.keys())}')
 
     async def set_cooldown():
         await lock.acquire()

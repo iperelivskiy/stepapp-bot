@@ -39,7 +39,7 @@ async def check_shoeboxes(redis):
 
     for item in filter(is_allowed, items):
         print(item)
-        await redis.publish('shoeboxes', json.dumps(item))
+        await redis.publish('shoeboxes:any', json.dumps(item))
 
 
 def is_allowed(item):

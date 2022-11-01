@@ -68,14 +68,16 @@ async def check_shoeboxes(redis, bot, set_aggressive_mode):
     if new_items[0]['priceFitfi'] <= MAX_PRICE:
         set_aggressive_mode()
 
-    for item in filter(is_allowed, new_items):
-        await redis.publish('shoeboxes', json.dumps(item))
+    for item in new_items:
+        channel_name = get_shoebox_channel_name(item)
+        if channel_name:
+            await redis.publish(channel_name, json.dumps(item))
 
     message = '\n'.join(f'{i["priceFitfi"]}FI {TYPES[i["staticSneakerTypeId"]]}' for i in new_items)
     await bot.send_message(TELEGRAM_CHANNEL_ID, f'New shoeboxes:\n{message}')
 
 
-def is_allowed(item):
+def get_shoebox_channel_name(item):
     """
     1 - Coach
     2 - Walker
@@ -83,15 +85,15 @@ def is_allowed(item):
     4 - Racer
     """
     if item['priceFitfi'] > MAX_PRICE:
-        return False
+        return None
 
     if item['priceFitfi'] <= 4000:
-        return True
+        return 'shoeboxes:any'
 
     if item['staticShoeBoxRarityId'] > 1:
-        return True
+        return 'shoeboxes:any'
 
-    return item['staticSneakerTypeId'] in [1]
+    return f'shoeboxes:{item["staticSneakerTypeId"]}'
 
 
 async def main():

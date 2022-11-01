@@ -6,7 +6,6 @@ services:
     build: .
     image: stepapp-bot
     command: ['python', 'app/watcher.py']
-    restart: always
     depends_on:
       - redis
     volumes:
@@ -30,7 +29,6 @@ services:
   agent1:
     image: stepapp-bot
     command: ['python', 'app/agent.py']
-    restart: always
     depends_on:
       - redis
     volumes:

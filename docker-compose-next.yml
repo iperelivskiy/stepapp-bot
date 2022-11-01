@@ -14,8 +14,9 @@ services:
       - ENVIRONMENT=development
       - PYTHONUNBUFFERED=1
       - REDIS_URL=${REDIS_URL}
-      - EMAIL=scoots-grassy-0h@icloud.com
+      - EMAIL=ballad-recons.0z@icloud.com
       - PASSWORD=${PASSWORD}
+      - SHOEBOX_CHANNEL_TYPE=2
 
   agent2:
     image: stepapp-bot
@@ -28,8 +29,9 @@ services:
       - ENVIRONMENT=development
       - PYTHONUNBUFFERED=1
       - REDIS_URL=${REDIS_URL}
-      - EMAIL=corner-biliary0l@icloud.com
+      - EMAIL=polish.tales05@icloud.com
       - PASSWORD=${PASSWORD}
+      - SHOEBOX_CHANNEL_TYPE=2
 
   agent3:
     image: stepapp-bot
@@ -42,8 +44,9 @@ services:
       - ENVIRONMENT=development
       - PYTHONUNBUFFERED=1
       - REDIS_URL=${REDIS_URL}
-      - EMAIL=flouncy_regent0l@icloud.com
+      - EMAIL=01legion.pep@icloud.com
       - PASSWORD=${PASSWORD}
+      - SHOEBOX_CHANNEL_TYPE=2
 
   agent4:
     image: stepapp-bot
@@ -56,8 +59,9 @@ services:
       - ENVIRONMENT=development
       - PYTHONUNBUFFERED=1
       - REDIS_URL=${REDIS_URL}
-      - EMAIL=beers.dares.0n@icloud.com
+      - EMAIL=tole-tiers-0q@icloud.com
       - PASSWORD=${PASSWORD}
+      - SHOEBOX_CHANNEL_TYPE=3
 
   agent5:
     image: stepapp-bot
@@ -70,8 +74,9 @@ services:
       - ENVIRONMENT=development
       - PYTHONUNBUFFERED=1
       - REDIS_URL=${REDIS_URL}
-      - EMAIL=congers_coldest0u@icloud.com
+      - EMAIL=warm-musher0d@icloud.com
       - PASSWORD=${PASSWORD}
+      - SHOEBOX_CHANNEL_TYPE=3
 
   agent6:
     image: stepapp-bot
@@ -84,8 +89,9 @@ services:
       - ENVIRONMENT=development
       - PYTHONUNBUFFERED=1
       - REDIS_URL=${REDIS_URL}
-      - EMAIL=boss-02-pendant@icloud.com
+      - EMAIL=maze-09tropes@icloud.com
       - PASSWORD=${PASSWORD}
+      - SHOEBOX_CHANNEL_TYPE=3
 
   agent7:
     image: stepapp-bot
@@ -98,8 +104,9 @@ services:
       - ENVIRONMENT=development
       - PYTHONUNBUFFERED=1
       - REDIS_URL=${REDIS_URL}
-      - EMAIL=00.whom_cosy@icloud.com
+      - EMAIL=waffles-passive.0c@icloud.com
       - PASSWORD=${PASSWORD}
+      - SHOEBOX_CHANNEL_TYPE=3
 
   agent8:
     image: stepapp-bot
@@ -112,8 +119,9 @@ services:
       - ENVIRONMENT=development
       - PYTHONUNBUFFERED=1
       - REDIS_URL=${REDIS_URL}
-      - EMAIL=ferrets.07.discs@icloud.com
+      - EMAIL=prover.fluffy_0q@icloud.com
       - PASSWORD=${PASSWORD}
+      - SHOEBOX_CHANNEL_TYPE=3
 
   agent9:
     image: stepapp-bot
@@ -126,8 +134,9 @@ services:
       - ENVIRONMENT=development
       - PYTHONUNBUFFERED=1
       - REDIS_URL=${REDIS_URL}
-      - EMAIL=sixfold_octave.0w@icloud.com
+      - EMAIL=pubs-corral0r@icloud.com
       - PASSWORD=${PASSWORD}
+      - SHOEBOX_CHANNEL_TYPE=3
 
   agent10:
     image: stepapp-bot
@@ -140,8 +149,9 @@ services:
       - ENVIRONMENT=development
       - PYTHONUNBUFFERED=1
       - REDIS_URL=${REDIS_URL}
-      - EMAIL=04likely_wand@icloud.com
+      - EMAIL=azure.thrifts_0j@icloud.com
       - PASSWORD=${PASSWORD}
+      - SHOEBOX_CHANNEL_TYPE=3
 
   agent11:
     image: stepapp-bot
@@ -154,21 +164,6 @@ services:
       - ENVIRONMENT=development
       - PYTHONUNBUFFERED=1
       - REDIS_URL=${REDIS_URL}
-      - EMAIL=mantis.0.consort@icloud.com
+      - EMAIL=sob.tokay-0a@icloud.com
       - PASSWORD=${PASSWORD}
-      - SHOEBOX_CHANNEL_TYPE=2
-
-  agent12:
-    image: stepapp-bot
-    command: ['python', 'app/agent.py']
-    restart: always
-    volumes:
-      - .:/opt/app
-    environment:
-      - DEBUG=true
-      - ENVIRONMENT=development
-      - PYTHONUNBUFFERED=1
-      - REDIS_URL=${REDIS_URL}
-      - EMAIL=zanier-hallows-0g@icloud.com
-      - PASSWORD=${PASSWORD}
-      - SHOEBOX_CHANNEL_TYPE=2
+      - SHOEBOX_CHANNEL_TYPE=3

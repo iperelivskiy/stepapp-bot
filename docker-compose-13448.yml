@@ -142,3 +142,33 @@ services:
       - REDIS_URL=${REDIS_URL}
       - EMAIL=courage-hydride-0w@icloud.com
       - PASSWORD=${PASSWORD}
+
+  agent11:
+    image: stepapp-bot
+    command: ['python', 'app/agent.py']
+    restart: always
+    volumes:
+      - .:/opt/app
+    environment:
+      - DEBUG=true
+      - ENVIRONMENT=development
+      - PYTHONUNBUFFERED=1
+      - REDIS_URL=${REDIS_URL}
+      - EMAIL=puma_wits_0n@icloud.com
+      - PASSWORD=${PASSWORD}
+      - SHOEBOX_CHANNEL_TYPE=2
+
+  agent12:
+    image: stepapp-bot
+    command: ['python', 'app/agent.py']
+    restart: always
+    volumes:
+      - .:/opt/app
+    environment:
+      - DEBUG=true
+      - ENVIRONMENT=development
+      - PYTHONUNBUFFERED=1
+      - REDIS_URL=${REDIS_URL}
+      - EMAIL=bard-shiner-0c@icloud.com
+      - PASSWORD=${PASSWORD}
+      - SHOEBOX_CHANNEL_TYPE=2

@@ -19,7 +19,6 @@ import auth
 ENV = Env()
 REDIS_URL = ENV.str('REDIS_URL')
 EMAIL = ENV.str('EMAIL')
-MAX_PRICE = ENV.int('MAX_PRICE')
 
 TELEGRAM_APP_ID = 5145344
 TELEGRAM_APP_TOKEN = '1a822dccf4c1fe151eceba3cec24958f'
@@ -65,8 +64,7 @@ async def check_shoeboxes(redis, bot, set_aggressive_mode):
 
     new_items.sort(key=lambda x: x['priceFitfi'])
 
-    if new_items[0]['priceFitfi'] <= MAX_PRICE:
-        set_aggressive_mode()
+    # set_aggressive_mode()
 
     for item in new_items:
         channel_name = get_shoebox_channel_name(item)
@@ -84,14 +82,15 @@ def get_shoebox_channel_name(item):
     3 - Hiker
     4 - Racer
     """
-    if item['priceFitfi'] > MAX_PRICE:
-        return None
-
     if item['priceFitfi'] <= 4000:
         return 'shoeboxes:any'
 
-    if item['staticShoeBoxRarityId'] > 1:
-        return 'shoeboxes:any'
+    # TODO: limit by some max price
+    # if item['staticShoeBoxRarityId'] > 1:
+    #     return 'shoeboxes:any'
+
+    if item['priceFitfi'] > ENV.int(f'MAX_PRICE_{item["staticSneakerTypeId"]}', 0):
+        return None
 
     return f'shoeboxes:{item["staticSneakerTypeId"]}'
 
@@ -136,7 +135,7 @@ async def main():
             await asyncio.sleep(0.4)
         else:
             print(f'--- {dt.datetime.now()} calm mode')
-            await asyncio.sleep(random.randint(10, 20) / 10)
+            await asyncio.sleep(random.randint(8, 16) / 10)
 
     await bot.disconnect()
     await redis.close()

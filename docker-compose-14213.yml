@@ -11,14 +11,8 @@ services:
       - redis
     volumes:
       - .:/opt/app
-    environment:
-      - DEBUG=true
-      - ENVIRONMENT=development
-      - PYTHONUNBUFFERED=1
-      - REDIS_URL=redis://default:${REDIS_PASSWORD}@redis:6379/0
-      - EMAIL=presto-repute0u@icloud.com
-      - PASSWORD=${PASSWORD}
-      - MAX_PRICE=${MAX_PRICE}
+    env_file:
+      - .env
 
   redis:
     image: redis
@@ -29,5 +23,5 @@ services:
       - 63179:6379
     expose:
       - "6379"
-    environment:
-      - REDIS_HOST_PASSWORD=${REDIS_PASSWORD}
+    env_file:
+      - .env

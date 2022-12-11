@@ -11,7 +11,6 @@ import auth
 
 ENV = Env()
 REDIS_URL = ENV.str('REDIS_URL')
-MAX_PRICE = ENV.int('MAX_PRICE')
 
 
 async def check_shoeboxes(redis):
@@ -37,22 +36,18 @@ async def check_shoeboxes(redis):
 
     items.sort(key=lambda x: x['priceFitfi'])
 
+    def is_allowed(item):
+        """
+        1 - Coach
+        2 - Walker
+        3 - Hiker
+        4 - Racer
+        """
+        return item['priceFitfi'] <= ENV.int(f'MAX_PRICE_{item["staticSneakerTypeId"]}', 4000)
+
     for item in filter(is_allowed, items):
         print(item)
         await redis.publish('shoeboxes:any', json.dumps(item))
-
-
-def is_allowed(item):
-    """
-    1 - Coach
-    2 - Walker
-    3 - Hiker
-    4 - Racer
-    """
-    if item['priceFitfi'] > MAX_PRICE:
-        return False
-
-    return item['staticSneakerTypeId'] in [1, 2, 3]
 
 
 async def main():

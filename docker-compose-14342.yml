@@ -2,168 +2,124 @@ version: '3'
 
 services:
 
-  agent1:
+  agent25:
     build: .
     image: stepapp-bot
     command: ['python', 'app/agent.py']
     restart: always
     volumes:
       - .:/opt/app
+    env_file:
+      - .env
     environment:
-      - DEBUG=true
-      - ENVIRONMENT=development
-      - PYTHONUNBUFFERED=1
-      - REDIS_URL=${REDIS_URL}
       - EMAIL=ballad-recons.0z@icloud.com
-      - PASSWORD=${PASSWORD}
-      - SHOEBOX_CHANNEL_TYPE=2
 
-  agent2:
+  agent26:
     image: stepapp-bot
     command: ['python', 'app/agent.py']
     restart: always
     volumes:
       - .:/opt/app
+    env_file:
+      - .env
     environment:
-      - DEBUG=true
-      - ENVIRONMENT=development
-      - PYTHONUNBUFFERED=1
-      - REDIS_URL=${REDIS_URL}
       - EMAIL=polish.tales05@icloud.com
-      - PASSWORD=${PASSWORD}
-      - SHOEBOX_CHANNEL_TYPE=2
 
-  agent3:
+  agent27:
     image: stepapp-bot
     command: ['python', 'app/agent.py']
     restart: always
     volumes:
       - .:/opt/app
+    env_file:
+      - .env
     environment:
-      - DEBUG=true
-      - ENVIRONMENT=development
-      - PYTHONUNBUFFERED=1
-      - REDIS_URL=${REDIS_URL}
       - EMAIL=01legion.pep@icloud.com
-      - PASSWORD=${PASSWORD}
-      - SHOEBOX_CHANNEL_TYPE=2
 
-  agent4:
+  agent28:
     image: stepapp-bot
     command: ['python', 'app/agent.py']
     restart: always
     volumes:
       - .:/opt/app
+    env_file:
+      - .env
     environment:
-      - DEBUG=true
-      - ENVIRONMENT=development
-      - PYTHONUNBUFFERED=1
-      - REDIS_URL=${REDIS_URL}
       - EMAIL=tole-tiers-0q@icloud.com
-      - PASSWORD=${PASSWORD}
-      - SHOEBOX_CHANNEL_TYPE=3
 
-  agent5:
+  agent29:
     image: stepapp-bot
     command: ['python', 'app/agent.py']
     restart: always
     volumes:
       - .:/opt/app
+    env_file:
+      - .env
     environment:
-      - DEBUG=true
-      - ENVIRONMENT=development
-      - PYTHONUNBUFFERED=1
-      - REDIS_URL=${REDIS_URL}
       - EMAIL=warm-musher0d@icloud.com
-      - PASSWORD=${PASSWORD}
-      - SHOEBOX_CHANNEL_TYPE=3
 
-  agent6:
+  agent30:
     image: stepapp-bot
     command: ['python', 'app/agent.py']
     restart: always
     volumes:
       - .:/opt/app
+    env_file:
+      - .env
     environment:
-      - DEBUG=true
-      - ENVIRONMENT=development
-      - PYTHONUNBUFFERED=1
-      - REDIS_URL=${REDIS_URL}
       - EMAIL=maze-09tropes@icloud.com
-      - PASSWORD=${PASSWORD}
-      - SHOEBOX_CHANNEL_TYPE=3
 
-  agent7:
+  agent31:
     image: stepapp-bot
     command: ['python', 'app/agent.py']
     restart: always
     volumes:
       - .:/opt/app
+    env_file:
+      - .env
     environment:
-      - DEBUG=true
-      - ENVIRONMENT=development
-      - PYTHONUNBUFFERED=1
-      - REDIS_URL=${REDIS_URL}
       - EMAIL=waffles-passive.0c@icloud.com
-      - PASSWORD=${PASSWORD}
-      - SHOEBOX_CHANNEL_TYPE=3
 
-  agent8:
+  agent32:
     image: stepapp-bot
     command: ['python', 'app/agent.py']
     restart: always
     volumes:
       - .:/opt/app
+    env_file:
+      - .env
     environment:
-      - DEBUG=true
-      - ENVIRONMENT=development
-      - PYTHONUNBUFFERED=1
-      - REDIS_URL=${REDIS_URL}
       - EMAIL=prover.fluffy_0q@icloud.com
-      - PASSWORD=${PASSWORD}
-      - SHOEBOX_CHANNEL_TYPE=3
 
-  agent9:
+  agent33:
     image: stepapp-bot
     command: ['python', 'app/agent.py']
     restart: always
     volumes:
       - .:/opt/app
+    env_file:
+      - .env
     environment:
-      - DEBUG=true
-      - ENVIRONMENT=development
-      - PYTHONUNBUFFERED=1
-      - REDIS_URL=${REDIS_URL}
       - EMAIL=pubs-corral0r@icloud.com
-      - PASSWORD=${PASSWORD}
-      - SHOEBOX_CHANNEL_TYPE=3
 
-  agent10:
+  agent34:
     image: stepapp-bot
     command: ['python', 'app/agent.py']
     restart: always
     volumes:
       - .:/opt/app
+    env_file:
+      - .env
     environment:
-      - DEBUG=true
-      - ENVIRONMENT=development
-      - PYTHONUNBUFFERED=1
-      - REDIS_URL=${REDIS_URL}
       - EMAIL=azure.thrifts_0j@icloud.com
-      - PASSWORD=${PASSWORD}
-      - SHOEBOX_CHANNEL_TYPE=3
 
-  agent11:
+  agent35:
     image: stepapp-bot
     command: ['python', 'app/agent.py']
     restart: always
     volumes:
       - .:/opt/app
+    env_file:
+      - .env
     environment:
-      - DEBUG=true
-      - ENVIRONMENT=development
-      - PYTHONUNBUFFERED=1
-      - REDIS_URL=${REDIS_URL}
       - EMAIL=sob.tokay-0a@icloud.com
-      - PASSWORD=${PASSWORD}
-      - SHOEBOX_CHANNEL_TYPE=3

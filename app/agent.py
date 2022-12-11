@@ -26,7 +26,7 @@ TELEGRAM_APP_TOKEN = '1a822dccf4c1fe151eceba3cec24958f'
 TELEGRAM_BOT_TOKEN = '5600428438:AAFgSPZWK18FSmzMhAHRoeOBhhiy967hDhU'
 TELEGRAM_CHANNEL_ID = -1001807612189
 
-SHOEBOX_CHANNEL_NAME = f'shoeboxes:{ENV.int("SHOEBOX_CHANNEL_TYPE", 1)}'
+ALLOWED_SHOEBOX_TYPES = ENV.list('ALLOWED_SHOEBOXES', [1, 2, 3, 4])
 
 
 TYPES = {
@@ -260,7 +260,7 @@ async def main():
     heartbeat_loop_task = asyncio.create_task(heartbeat_loop())
 
     async with pubsub as p:
-        channels = ['shoeboxes:any', SHOEBOX_CHANNEL_NAME]
+        channels = [f'shoeboxes:{ast}' for ast in ALLOWED_SHOEBOX_TYPES] + ['shoeboxes:any']
         await p.subscribe(*channels)
         await reader(p, bot, lock)
         await p.unsubscribe(*channels)

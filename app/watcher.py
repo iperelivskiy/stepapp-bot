@@ -71,8 +71,8 @@ async def check_shoeboxes(redis, bot, set_aggressive_mode):
         if channel_name:
             await redis.publish(channel_name, json.dumps(item))
 
-    message = '\n'.join(f'{i["priceFitfi"]}FI {TYPES[i["staticSneakerTypeId"]]}' for i in new_items)
-    await bot.send_message(TELEGRAM_CHANNEL_ID, f'New shoeboxes:\n{message}')
+    message = '\n'.join(f'{TYPES[i["staticSneakerTypeId"]]} {i["priceFitfi"]}FI' for i in new_items)
+    await bot.send_message(TELEGRAM_CHANNEL_ID, f'{message}')
 
 
 def get_shoebox_channel_name(item):

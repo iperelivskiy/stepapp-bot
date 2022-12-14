@@ -17,7 +17,8 @@ services:
       - EMAIL=jades.anglers0v@icloud.com
       - PASSWORD=${PASSWORD}
       - REDIS_URL=redis://redis:6379/0
-      - MAX_PRICE=1000
+      - MAX_PRICE_1=1000
+      - MAX_PRICE_2=1000
 
   redis:
     image: redis

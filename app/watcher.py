@@ -122,8 +122,12 @@ async def main():
         aggressive_mode.clear()
 
     session = requests.Session()
-    data = {"params": {"deviceId": "3C83D88A-5FEE-4B20-A9DE-6B9274FDB636"}}
+    import uuid
+    data = {"params": {"deviceId": str(uuid.uuid4()).upper()}}
+    # resp = session.post('https://prd-api.step.app/analytics/loadAppStarted', headers=auth.get_headers(), json=data, verify=False)
     resp = session.post('https://prd-api.step.app/analytics/seenLogInView', headers=auth.get_headers(), json=data, verify=False)
+    print(resp.cookies)
+    print(data)
 
     print(f'Watcher started for {EMAIL}')
 

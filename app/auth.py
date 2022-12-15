@@ -13,41 +13,29 @@ PASSWORD = ENV.str('PASSWORD')
 AUTH_PATH = os.path.join(os.path.dirname(__file__), '..', 'auth.json')
 
 
-def get_headers(session=None):
-    headers = {
-        'User-Agent': 'stepapp/1.0.7 (com.step.stepapp-ios; build:85; iOS 16.1.2) Alamofire/5.6.3',
-        'Accept-Encoding': 'br;q=1.0, gzip;q=0.9, deflate;q=0.8',
-        'Accept-Language': 'en-KZ;q=1.0, ru-KZ;q=0.9'
-    }
-
-    if session:
-        headers['Authorization'] = f'Bearer {get_token(session)}'
-
-    return headers
-
-
-def get_token(session):
+def set_auth(session):
     if not os.path.exists(AUTH_PATH):
-        return get_new_token(session)
+        return update_auth(session)
 
     with open(AUTH_PATH, 'r') as f:
         auth = json.load(f)
         token = auth.get(EMAIL)
         if not token:
-            return get_new_token(session)
+            return update_auth(session)
 
     token_data = jwt.decode(token, algorithms=['HS256'], options={'verify_signature': False})
     exp = dt.datetime.fromtimestamp(token_data['Exp'])
 
     if dt.datetime.now() + dt.timedelta(seconds=60 * 10) < exp:
+        session.headers['Authorization'] = f'Bearer {token}'
         return token
     else:
-        return get_new_token(session)
+        return update_auth(session)
 
 
-def get_new_token(session):
+def update_auth(session):
     data = {'params':{'email': EMAIL, 'password': PASSWORD}}
-    resp = session.post('https://prd-api.step.app/auth/auth/loginWithPassword/', headers=get_headers(), json=data, verify=False)
+    resp = session.post('https://prd-api.step.app/auth/auth/loginWithPassword/', json=data)
 
     try:
         resp.raise_for_status()
@@ -67,6 +55,7 @@ def get_new_token(session):
     with open(AUTH_PATH, 'w') as f:
         json.dump(auth, f)
 
+    session.headers['Authorization'] = f'Bearer {token}'
     print('Auth success for', EMAIL)
     print(token)
 

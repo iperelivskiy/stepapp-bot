@@ -3,14 +3,14 @@ import datetime as dt
 import hashlib
 import json
 import os
-import random
 import signal
 import sys
 import urllib3
+import uuid
 
 import aioredis
 import async_timeout
-import requests
+import cloudscraper
 from environs import Env
 from telethon.sync import TelegramClient
 
@@ -45,7 +45,7 @@ async def buy_shoebox(item, session, bot, set_cooldown):
         resp = None
 
         try:
-            resp = session.post('https://prd-api.step.app/game/1/market/buyShoeBox', headers=auth.get_headers(session), json=data, verify=False)
+            resp = session.post('https://prd-api.step.app/game/1/market/buyShoeBox', json=data)
             resp.raise_for_status()
             return True
         except Exception as e:
@@ -67,7 +67,7 @@ async def open_shoeboxes_and_sell(session, cost_prices, bot):
     resp = None
 
     try:
-        resp = session.post('https://prd-api.step.app/game/1/user/getCurrent', headers=auth.get_headers(session), verify=False)
+        resp = session.post('https://prd-api.step.app/game/1/user/getCurrent')
         resp.raise_for_status()
         items = list(resp.json()['result']['changes']['dynItems']['updated'])
     except (TypeError, KeyError):
@@ -94,9 +94,9 @@ async def open_shoebox(session, shoebox):
     resp = None
 
     try:
-        resp = session.post('https://prd-api.step.app/game/1/shoeBox/seen', headers=auth.get_headers(session), json=data, verify=False)
+        resp = session.post('https://prd-api.step.app/game/1/shoeBox/seen', json=data)
         resp.raise_for_status()
-        resp = session.post('https://prd-api.step.app/game/1/shoeBox/open', headers=auth.get_headers(session), json=data, verify=False)
+        resp = session.post('https://prd-api.step.app/game/1/shoeBox/open', json=data)
         resp.raise_for_status()
         sneaker = resp.json()['result']['changes']['dynSneakers']['updated'][0]
         assert sneaker['networkTokenId'] == shoebox['shoeBox']['networkTokenId']
@@ -124,7 +124,7 @@ async def sell_sneaker(session, sneaker, cost_price, bot):
     resp = None
 
     try:
-        resp = session.post('https://prd-api.step.app/game/1/market/sellSneaker', headers=auth.get_headers(session), json=data, verify=False)
+        resp = session.post('https://prd-api.step.app/game/1/market/sellSneaker', json=data)
         resp.raise_for_status()
     except Exception as e:
         print(f'SELL SNEAKER ERROR for {EMAIL}', e)
@@ -174,7 +174,11 @@ def get_sneaker_price(sneaker, cost_price):
 
 
 async def check_sellings(cur_sellings, session, bot):
-    resp = session.post('https://prd-api.step.app/game/1/user/getCurrent', headers=auth.get_headers(session), verify=False, timeout=2)
+    resp = session.post('https://prd-api.step.app/game/1/user/getCurrent', timeout=5)
+
+    if resp.status_code == 401:
+        auth.update_auth(session)
+        return
 
     try:
         resp.raise_for_status()
@@ -237,9 +241,13 @@ async def main():
     client = TelegramClient(bot_session, TELEGRAM_APP_ID, TELEGRAM_APP_TOKEN)
     bot = await client.start(bot_token=TELEGRAM_BOT_TOKEN)
 
-    session = requests.Session()
-    data = {"params": {"deviceId": "3C83E77A-5FEE-4B20-A8DC-6B9274FDB956"}}
-    session.post('https://prd-api.step.app/analytics/seenLogInView', headers=auth.get_headers(), json=data, verify=False)
+    session = cloudscraper.create_scraper()
+    data = {'params': {'deviceId': str(uuid.uuid4()).upper()}}
+    resp = session.post('https://prd-api.step.app/analytics/seenLogInView', json=data)
+    resp.raise_for_status()
+    auth.set_auth(session)
+
+    lock = asyncio.Lock()
 
     async def check_sellings_loop(session, bot):
         current_sellings = None
@@ -250,17 +258,10 @@ async def main():
             except Exception as e:
                 print('check_sellings', e)
 
-            await asyncio.sleep(random.randint(30, 60))
+            print(f'--- {dt.datetime.now()}{["", " cooldown"][lock.locked()]}')
+            await asyncio.sleep(60)
 
     check_sellings_loop_task = asyncio.create_task(check_sellings_loop(session, bot))
-    lock = asyncio.Lock()
-
-    async def heartbeat_loop():
-        while True:
-            await asyncio.sleep(30)
-            print(f'--- {dt.datetime.now()}{["", " cooldown"][lock.locked()]}')
-
-    heartbeat_loop_task = asyncio.create_task(heartbeat_loop())
 
     async with pubsub as p:
         channels = [f'shoeboxes:{ast}' for ast in ALLOWED_SHOEBOX_TYPES] + ['shoeboxes:any']
@@ -269,7 +270,6 @@ async def main():
         await p.unsubscribe(*channels)
 
     check_sellings_loop_task.cancel()
-    heartbeat_loop_task.cancel()
     await bot.disconnect()
     await pubsub.close()
     await redis.close()

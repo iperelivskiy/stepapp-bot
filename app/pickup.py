@@ -3,7 +3,7 @@ import json
 import urllib3
 
 import aioredis
-import requests
+import cloudscraper
 from environs import Env
 
 import auth
@@ -13,12 +13,12 @@ ENV = Env()
 REDIS_URL = ENV.str('REDIS_URL')
 
 
-async def check_shoeboxes(redis):
+async def check_shoeboxes(redis, session):
     data = {"params":{"skip":0,"sortOrder":"latest","take":10,"network":"avalanche"}}
-    resp = requests.post('https://prd-api.step.app/market/selling/shoeBoxes', headers=auth.get_headers(), json=data, verify=False, timeout=2)
+    resp = session.post('https://prd-api.step.app/market/selling/shoeBoxes', json=data)
 
     if resp.status_code == 401:
-        auth.get_new_token()
+        auth.update_auth(session)
         return
 
     try:
@@ -52,7 +52,12 @@ async def check_shoeboxes(redis):
 
 async def main():
     redis = await aioredis.from_url(REDIS_URL, decode_responses=True)
-    await check_shoeboxes(redis)
+    session = cloudscraper.create_scraper()
+    data = {'params': {'deviceId': str(uuid.uuid4()).upper()}}
+    resp = session.post('https://prd-api.step.app/analytics/seenLogInView', json=data)
+    resp.raise_for_status()
+    auth.set_auth(session)
+    await check_shoeboxes(redis, session)
     await redis.close()
 
 

@@ -7,9 +7,10 @@ import random
 import signal
 import sys
 import urllib3
+import uuid
 
 import aioredis
-import requests
+import cloudscraper
 from environs import Env
 from telethon.sync import TelegramClient
 
@@ -35,10 +36,10 @@ TYPES = {
 
 async def check_shoeboxes(redis, session, bot, set_aggressive_mode):
     data = {"params":{"skip":0,"sortOrder":"latest","take":10,"network":"avalanche"}}
-    resp = session.post('https://prd-api.step.app/market/selling/shoeBoxes', headers=auth.get_headers(session), json=data, verify=False, timeout=2)
+    resp = session.post('https://prd-api.step.app/market/selling/shoeBoxes', json=data, timeout=5)
 
     if resp.status_code == 401:
-        auth.get_new_token()
+        auth.update_auth(session)
         return
 
     try:
@@ -121,13 +122,11 @@ async def main():
         await asyncio.sleep(60)
         aggressive_mode.clear()
 
-    session = requests.Session()
-    import uuid
-    data = {"params": {"deviceId": str(uuid.uuid4()).upper()}}
-    # resp = session.post('https://prd-api.step.app/analytics/loadAppStarted', headers=auth.get_headers(), json=data, verify=False)
-    resp = session.post('https://prd-api.step.app/analytics/seenLogInView', headers=auth.get_headers(), json=data, verify=False)
-    print(resp.cookies)
-    print(data)
+    session = cloudscraper.create_scraper()
+    data = {'params': {'deviceId': str(uuid.uuid4()).upper()}}
+    resp = session.post('https://prd-api.step.app/analytics/seenLogInView', json=data)
+    resp.raise_for_status()
+    auth.set_auth(session)
 
     print(f'Watcher started for {EMAIL}')
 
@@ -143,7 +142,7 @@ async def main():
             await asyncio.sleep(0.4)
         else:
             print(f'--- {dt.datetime.now()} calm mode')
-            await asyncio.sleep(random.randint(6, 12) / 10)
+            await asyncio.sleep(random.randint(8, 12) / 10)
 
     await bot.disconnect()
     await redis.close()

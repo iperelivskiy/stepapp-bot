@@ -3,7 +3,6 @@ import json
 import os
 
 import jwt
-import requests
 from environs import Env
 
 
@@ -14,20 +13,20 @@ PASSWORD = ENV.str('PASSWORD')
 AUTH_PATH = os.path.join(os.path.dirname(__file__), '..', 'auth.json')
 
 
-def get_headers(auth=True):
+def get_headers(session=None):
     headers = {
-        'User-Agent': 'stepapp/1.0.3 (com.step.stepapp-ios; build:78; iOS 16.1.2) Alamofire/5.6.3',
+        'User-Agent': 'stepapp/1.0.7 (com.step.stepapp-ios; build:85; iOS 16.1.2) Alamofire/5.6.3',
         'Accept-Encoding': 'br;q=1.0, gzip;q=0.9, deflate;q=0.8',
         'Accept-Language': 'en-KZ;q=1.0, ru-KZ;q=0.9'
     }
 
-    if auth:
-        headers['Authorization'] = f'Bearer {get_token()}'
+    if session:
+        headers['Authorization'] = f'Bearer {get_token(session)}'
 
     return headers
 
 
-def get_token():
+def get_token(session):
     if not os.path.exists(AUTH_PATH):
         return get_new_token()
 
@@ -43,12 +42,12 @@ def get_token():
     if dt.datetime.now() + dt.timedelta(seconds=60 * 10) < exp:
         return token
     else:
-        return get_new_token()
+        return get_new_token(session)
 
 
-def get_new_token():
+def get_new_token(session):
     data = {'params':{'email': EMAIL, 'password': PASSWORD}}
-    resp = requests.post('https://prd-api.step.app/auth/auth/loginWithPassword/', headers=get_headers(False), json=data, verify=False)
+    resp = session.post('https://prd-api.step.app/auth/auth/loginWithPassword/', headers=get_headers(False), json=data, verify=False)
 
     try:
         resp.raise_for_status()

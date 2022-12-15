@@ -1,11 +1,11 @@
 import asyncio
 import datetime as dt
+import decimal
 import json
 import os
 import random
 import signal
 import sys
-import time
 import urllib3
 
 import aioredis
@@ -33,9 +33,9 @@ TYPES = {
 }
 
 
-async def check_shoeboxes(redis, bot, set_aggressive_mode):
+async def check_shoeboxes(redis, session, bot, set_aggressive_mode):
     data = {"params":{"skip":0,"sortOrder":"latest","take":10,"network":"avalanche"}}
-    resp = requests.post('https://prd-api.step.app/market/selling/shoeBoxes', headers=auth.get_headers(), json=data, verify=False, timeout=2)
+    resp = session.post('https://prd-api.step.app/market/selling/shoeBoxes', headers=auth.get_headers(session), json=data, verify=False, timeout=2)
 
     if resp.status_code == 401:
         auth.get_new_token()
@@ -71,7 +71,7 @@ async def check_shoeboxes(redis, bot, set_aggressive_mode):
         if channel_name:
             await redis.publish(channel_name, json.dumps(item))
 
-    message = '\n'.join(f'{TYPES[i["staticSneakerTypeId"]]} {i["priceFitfi"]}FI' for i in new_items)
+    message = '\n'.join(f'{TYPES[i["staticSneakerTypeId"]]} {decimal.Decimal(i["priceFitfi"])}' for i in new_items)
     await bot.send_message(TELEGRAM_CHANNEL_ID, f'{message}')
 
 
@@ -102,8 +102,8 @@ async def main():
     if not os.path.exists(telegram_dir):
         os.makedirs(telegram_dir)
 
-    session = os.path.join(telegram_dir, f'bot-watcher')
-    client = TelegramClient(session, TELEGRAM_APP_ID, TELEGRAM_APP_TOKEN)
+    bot_session = os.path.join(telegram_dir, f'bot-watcher')
+    client = TelegramClient(bot_session, TELEGRAM_APP_ID, TELEGRAM_APP_TOKEN)
     bot = await client.start(bot_token=TELEGRAM_BOT_TOKEN)
     aggressive_mode = asyncio.Event()
     unset_aggresive_mode_tasks = []
@@ -121,11 +121,15 @@ async def main():
         await asyncio.sleep(60)
         aggressive_mode.clear()
 
+    session = requests.Session()
+    data = {"params": {"deviceId": "3C83E77A-5FEE-4B20-A8DC-6B9274FDB956"}}
+    session.post('https://prd-api.step.app/analytics/seenLogInView', headers=auth.get_headers(), json=data, verify=False)
+
     print(f'Watcher started for {EMAIL}')
 
     while True:
         try:
-            await check_shoeboxes(redis, bot, set_aggressive_mode)
+            await check_shoeboxes(redis, session, bot, set_aggressive_mode)
         except Exception as e:
             print('check_shoeboxes', e)
             break
@@ -135,7 +139,7 @@ async def main():
             await asyncio.sleep(0.4)
         else:
             print(f'--- {dt.datetime.now()} calm mode')
-            await asyncio.sleep(random.randint(8, 16) / 10)
+            await asyncio.sleep(random.randint(6, 12) / 10)
 
     await bot.disconnect()
     await redis.close()

@@ -28,13 +28,13 @@ def get_headers(session=None):
 
 def get_token(session):
     if not os.path.exists(AUTH_PATH):
-        return get_new_token()
+        return get_new_token(session)
 
     with open(AUTH_PATH, 'r') as f:
         auth = json.load(f)
         token = auth.get(EMAIL)
         if not token:
-            return get_new_token()
+            return get_new_token(session)
 
     token_data = jwt.decode(token, algorithms=['HS256'], options={'verify_signature': False})
     exp = dt.datetime.fromtimestamp(token_data['Exp'])
@@ -47,7 +47,7 @@ def get_token(session):
 
 def get_new_token(session):
     data = {'params':{'email': EMAIL, 'password': PASSWORD}}
-    resp = session.post('https://prd-api.step.app/auth/auth/loginWithPassword/', headers=get_headers(False), json=data, verify=False)
+    resp = session.post('https://prd-api.step.app/auth/auth/loginWithPassword/', headers=get_headers(), json=data, verify=False)
 
     try:
         resp.raise_for_status()

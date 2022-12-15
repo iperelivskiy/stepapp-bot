@@ -178,7 +178,7 @@ async def check_sellings(cur_sellings, session, bot):
 
     if resp.status_code == 401:
         auth.update_auth(session)
-        return
+        return await check_sellings(cur_sellings, session, bot)
 
     try:
         resp.raise_for_status()

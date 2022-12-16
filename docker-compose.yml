@@ -41,3 +41,4 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - EMAIL=jades.anglers0v@icloud.com
       - PASSWORD=${PASSWORD}
+      - LOOTBOXES_ALLOWED=True

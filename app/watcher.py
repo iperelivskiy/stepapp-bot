@@ -72,7 +72,7 @@ async def check_shoeboxes(redis, session, bot, set_aggressive_mode):
         if channel_name:
             await redis.publish(channel_name, json.dumps(item))
 
-    message = '\n'.join(f'{TYPES[i["staticSneakerTypeId"]]} {decimal.Decimal(i["priceFitfi"])}' for i in new_items)
+    message = '\n'.join(f'Shoebox {TYPES[i["staticSneakerTypeId"]]} {decimal.Decimal(i["priceFitfi"])}' for i in new_items)
     await bot.send_message(TELEGRAM_CHANNEL_ID, f'{message}')
 
 
@@ -102,19 +102,29 @@ async def check_lootboxes(redis, session, bot, set_aggressive_mode):
             await redis.set(f'lootbox:{item["sellingId"]}', json.dumps(item))
             new_items.append(item)
 
-    def is_allowed(item):
-        return item['priceFitfi'] < 3000 and item['networkTokenId'] < 350000
+    new_items.sort(key=lambda x: x['priceFitfi'])
 
-    allowed_items = list(filter(is_allowed, sorted(new_items, key=lambda x: x['priceFitfi'])))
+    def is_buyable(item):
+        if item['networkTokenId'] < 300000 and item['priceFitfi'] <= 1600:
+            return True
 
-    if not allowed_items:
-        return
+        if item['networkTokenId'] < 350000 and item['priceFitfi'] <= 1000:
+            return True
 
-    for item in allowed_items:
+        return False
+
+    for item in filter(is_buyable, new_items):
+        item['lootbox'] = True
         await redis.publish('lootboxes', json.dumps(item))
 
-    message = '\n'.join(f'Lootbox {decimal.Decimal(i["priceFitfi"])} #{i["networkTokenId"]}' for i in allowed_items)
-    await bot.send_message(TELEGRAM_CHANNEL_ID, f'{message}')
+    def is_monitored(item):
+        return item['priceFitfi'] < 3000 and item['networkTokenId'] < 400000
+
+    monitored_items = list(filter(is_monitored, new_items))
+    message = '\n'.join(f'Lootbox {decimal.Decimal(i["priceFitfi"])} #{i["networkTokenId"]}' for i in monitored_items)
+
+    if message:
+        await bot.send_message(TELEGRAM_CHANNEL_ID, f'{message}')
 
 
 def get_shoebox_channel_name(item):

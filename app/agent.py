@@ -40,7 +40,7 @@ TYPES = {
 async def buy_shoebox(item, session, bot, set_cooldown):
 
     def request():
-        print(f'BUYING for {EMAIL}', item)
+        print(f'BUYING shoebox for {EMAIL}', item)
         data = {'params': {'sellingId': item['sellingId']}}
         resp = None
 
@@ -58,9 +58,32 @@ async def buy_shoebox(item, session, bot, set_cooldown):
 
     if success:
         # await set_cooldown()
-        await bot.send_message(TELEGRAM_CHANNEL_ID, f'{EMAIL}\nBought shoebox: {TYPES[item["staticSneakerTypeId"]]} {item["networkTokenId"]}')
+        await bot.send_message(TELEGRAM_CHANNEL_ID, f'{EMAIL}\nBought shoebox {TYPES[item["staticSneakerTypeId"]]} #{item["networkTokenId"]}')
         # cost_prices = {item['networkTokenId']: item['priceFitfi']}
         # asyncio.create_task(open_shoeboxes_and_sell(cost_prices, bot))
+
+
+async def buy_lootbox(item, session, bot, set_cooldown):
+
+    def request():
+        print(f'BUYING lootbox for {EMAIL}', item)
+        data = {'params': {'sellingId': item['sellingId']}}
+        resp = None
+
+        try:
+            resp = session.post('https://prd-api.step.app/game/1/market/buyLootBox', json=data)
+            resp.raise_for_status()
+            return True
+        except Exception as e:
+            print(f'BUYING ERROR for {EMAIL}', e)
+        finally:
+            if resp is not None:
+                print(resp.status_code, resp.text)
+
+    success = await asyncio.to_thread(request)
+
+    if success:
+        await bot.send_message(TELEGRAM_CHANNEL_ID, f'{EMAIL}\nBought lootbox #{item["networkTokenId"]}')
 
 
 async def open_shoeboxes_and_sell(session, cost_prices, bot):
@@ -222,7 +245,10 @@ async def reader(channel: aioredis.client.PubSub, session, bot, lock):
                     except Exception:
                         pass
                     else:
-                        asyncio.create_task(buy_shoebox(item, session, bot, set_cooldown))
+                        if item.get('lootbox'):
+                            asyncio.create_task(buy_lootbox(item, session, bot, set_cooldown))
+                        else:
+                            asyncio.create_task(buy_shoebox(item, session, bot, set_cooldown))
         except asyncio.TimeoutError:
             pass
         finally:
@@ -264,7 +290,12 @@ async def main():
     check_sellings_loop_task = asyncio.create_task(check_sellings_loop(session, bot))
 
     async with pubsub as p:
-        channels = [f'shoeboxes:{ast}' for ast in ALLOWED_SHOEBOX_TYPES] + ['shoeboxes:any']
+        channels = [f'shoeboxes:{ast}' for ast in ALLOWED_SHOEBOX_TYPES]
+        channels.append('shoeboxes:any')
+
+        if ENV.bool('LOOTBOXES_ALLOWED', False):
+            channels.append('lootboxes')
+
         await p.subscribe(*channels)
         await reader(p, session, bot, lock)
         await p.unsubscribe(*channels)

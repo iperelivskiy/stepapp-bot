@@ -76,6 +76,47 @@ async def check_shoeboxes(redis, session, bot, set_aggressive_mode):
     await bot.send_message(TELEGRAM_CHANNEL_ID, f'{message}')
 
 
+async def check_lootboxes(redis, session, bot, set_aggressive_mode):
+    data = {"params":{"skip":0,"force":True,"sortOrder":"latest","take":10,"network":"avalanche"}}
+    resp = session.post('https://prd-api.step.app/market/selling/lootBoxes', json=data, timeout=5)
+
+    if resp.status_code == 401:
+        auth.update_auth(session)
+        return
+
+    try:
+        resp.raise_for_status()
+        items = resp.json()['result']['items']
+    except Exception:
+        print(resp.text)
+        raise
+
+    new_items = []
+
+    for item in items:
+        exists = await redis.exists(f'lootbox:{item["sellingId"]}')
+
+        if exists:
+            print('In cache', item)
+        else:
+            await redis.set(f'lootbox:{item["sellingId"]}', json.dumps(item))
+            new_items.append(item)
+
+    def is_allowed(item):
+        return item['priceFitfi'] < 3000 and item['networkTokenId'] < 300000
+
+    allowed_items = list(filter(is_allowed, sorted(new_items, key=lambda x: x['priceFitfi'])))
+
+    if not allowed_items:
+        return
+
+    for item in allowed_items:
+        await redis.publish('lootboxes', json.dumps(item))
+
+    message = '\n'.join(f'Lootbox {decimal.Decimal(i["priceFitfi"])} #{i["networkTokenId"]}' for i in allowed_items)
+    await bot.send_message(TELEGRAM_CHANNEL_ID, f'{message}')
+
+
 def get_shoebox_channel_name(item):
     """
     1 - Coach
@@ -137,12 +178,18 @@ async def main():
             print('check_shoeboxes', e)
             break
 
+        try:
+            await check_lootboxes(redis, session, bot, set_aggressive_mode)
+        except Exception as e:
+            print('check_lootboxes', e)
+            break
+
         if aggressive_mode.is_set():
             print(f'--- {dt.datetime.now()} aggressive mode')
             await asyncio.sleep(0.4)
         else:
             print(f'--- {dt.datetime.now()} calm mode')
-            await asyncio.sleep(random.randint(8, 12) / 10)
+            await asyncio.sleep(random.randint(8, 16) / 10)
 
     await bot.disconnect()
     await redis.close()

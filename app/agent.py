@@ -3,6 +3,7 @@ import datetime as dt
 import hashlib
 import json
 import os
+import random
 import signal
 import sys
 import urllib3
@@ -185,7 +186,7 @@ async def main():
                 print('check_sellings', e)
 
             print(f'--- {dt.datetime.now()}{["", " cooldown"][lock.locked()]}')
-            await asyncio.sleep(60)
+            await asyncio.sleep(random.randint(30, 60))
 
     check_sellings_loop_task = asyncio.create_task(check_sellings_loop(session, bot))
 

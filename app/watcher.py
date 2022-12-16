@@ -72,7 +72,7 @@ async def check_shoeboxes(redis, session, bot, set_aggressive_mode):
         if channel_name:
             await redis.publish(channel_name, json.dumps(item))
 
-    message = '\n'.join(f'Shoebox {TYPES[i["staticSneakerTypeId"]]} {decimal.Decimal(i["priceFitfi"])} #{i["networkTokenId"]}' for i in new_items)
+    message = '\n'.join(f'SB {TYPES[i["staticSneakerTypeId"]]} {decimal.Decimal(i["priceFitfi"])}FI #{i["networkTokenId"]}' for i in new_items)
     await bot.send_message(TELEGRAM_CHANNEL_ID, f'{message}')
 
 
@@ -121,7 +121,7 @@ async def check_lootboxes(redis, session, bot, set_aggressive_mode):
         return item['priceFitfi'] < 3000 and item['networkTokenId'] < 400000
 
     monitored_items = list(filter(is_monitored, new_items))
-    message = '\n'.join(f'Lootbox {decimal.Decimal(i["priceFitfi"])} #{i["networkTokenId"]}' for i in monitored_items)
+    message = '\n'.join(f'LB {decimal.Decimal(i["priceFitfi"])}FI #{i["networkTokenId"]}' for i in monitored_items)
 
     if message:
         await bot.send_message(TELEGRAM_CHANNEL_ID, f'{message}')

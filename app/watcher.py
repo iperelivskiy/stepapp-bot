@@ -178,15 +178,18 @@ async def main():
         'platform': 'darwin',
         'mobile': False
     })
+
+    import hashlib
+
     # str(uuid.uuid4()).upper()
-    data = {'params': {'deviceId': 'bd2186be6dfefc1d415d56f302cecca9'}}
+    data = {'params': {'deviceId': hashlib.md5(str(uuid.uuid4()).encode()).hexdigest()}}
     resp = session.post('https://prd-api.step.app/analytics/seenLogInView', json=data)
 
     try:
         resp.raise_for_status()
     except Exception:
-        print(resp.request.headers)
-        print(resp.text)
+        #print(resp.request.headers)
+        #print(resp.text)
         raise
 
     auth.set_auth(session)

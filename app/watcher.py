@@ -103,7 +103,7 @@ async def check_lootboxes(redis, session, bot, set_aggressive_mode):
             new_items.append(item)
 
     def is_allowed(item):
-        return item['priceFitfi'] < 3000 and item['networkTokenId'] < 300000
+        return item['priceFitfi'] < 3000 and item['networkTokenId'] < 350000
 
     allowed_items = list(filter(is_allowed, sorted(new_items, key=lambda x: x['priceFitfi'])))
 

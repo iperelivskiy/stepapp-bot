@@ -176,7 +176,14 @@ async def main():
     session = cloudscraper.create_scraper()
     data = {'params': {'deviceId': str(uuid.uuid4()).upper()}}
     resp = session.post('https://prd-api.step.app/analytics/seenLogInView', json=data)
-    resp.raise_for_status()
+
+    try:
+        resp.raise_for_status()
+    except Exception:
+        print(resp.request.headers)
+        print(resp.text)
+        raise
+
     auth.set_auth(session)
 
     print(f'Watcher started for {EMAIL}')

@@ -120,8 +120,11 @@ async def check_lootboxes(redis, session, bot, set_aggressive_mode):
     def is_monitored(item):
         return item['priceFitfi'] < 3000 and item['networkTokenId'] < 400000
 
+    def wow(item):
+        return '!!!' if is_buyable(item) else ''
+
     monitored_items = list(filter(is_monitored, new_items))
-    message = '\n'.join(f'LB {decimal.Decimal(i["priceFitfi"])}FI #{i["networkTokenId"]}' for i in monitored_items)
+    message = '\n'.join(f'LB{wow(i)} {decimal.Decimal(i["priceFitfi"])}FI #{i["networkTokenId"]}' for i in monitored_items)
 
     if message:
         await bot.send_message(TELEGRAM_CHANNEL_ID, f'{message}')

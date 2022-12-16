@@ -1,13 +1,13 @@
 import asyncio
 import datetime as dt
 import decimal
+import hashlib
 import json
 import os
 import random
 import signal
 import sys
 import urllib3
-import uuid
 
 import aioredis
 import cloudscraper
@@ -173,23 +173,20 @@ async def main():
         await asyncio.sleep(60)
         aggressive_mode.clear()
 
-    session = cloudscraper.create_scraper(debug=True, browser={
+    session = cloudscraper.create_scraper(browser={
         'browser': 'chrome',
         'platform': 'darwin',
         'mobile': False
     })
 
-    import hashlib
-
-    # str(uuid.uuid4()).upper()
-    data = {'params': {'deviceId': hashlib.md5(str(uuid.uuid4()).encode()).hexdigest()}}
+    data = {'params': {'deviceId': hashlib.md5(EMAIL.encode()).hexdigest()}}
     resp = session.post('https://prd-api.step.app/analytics/seenLogInView', json=data)
 
     try:
         resp.raise_for_status()
     except Exception:
-        #print(resp.request.headers)
-        #print(resp.text)
+        print(resp.request.headers)
+        print(resp.text)
         raise
 
     auth.set_auth(session)

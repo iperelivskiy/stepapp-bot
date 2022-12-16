@@ -6,7 +6,6 @@ import os
 import signal
 import sys
 import urllib3
-import uuid
 
 import aioredis
 import async_timeout
@@ -157,12 +156,23 @@ async def main():
     client = TelegramClient(bot_session, TELEGRAM_APP_ID, TELEGRAM_APP_TOKEN)
     bot = await client.start(bot_token=TELEGRAM_BOT_TOKEN)
 
-    session = cloudscraper.create_scraper()
-    data = {'params': {'deviceId': str(uuid.uuid4()).upper()}}
-    resp = session.post('https://prd-api.step.app/analytics/seenLogInView', json=data)
-    resp.raise_for_status()
-    auth.set_auth(session)
+    session = cloudscraper.create_scraper(browser={
+        'browser': 'chrome',
+        'platform': 'darwin',
+        'mobile': False
+    })
 
+    data = {'params': {'deviceId': hashlib.md5(EMAIL.encode()).hexdigest()}}
+    resp = session.post('https://prd-api.step.app/analytics/seenLogInView', json=data)
+
+    try:
+        resp.raise_for_status()
+    except Exception:
+        print(resp.request.headers)
+        print(resp.text)
+        raise
+
+    auth.set_auth(session)
     lock = asyncio.Lock()
 
     async def check_sellings_loop(session, bot):

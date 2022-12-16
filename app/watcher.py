@@ -173,17 +173,15 @@ async def main():
         await asyncio.sleep(60)
         aggressive_mode.clear()
 
-    session = cloudscraper.create_scraper()
+    session = cloudscraper.create_scraper(debug=True, browser={
+        'browser': 'chrome',
+        'platform': 'android',
+        'desktop': False
+    })
+
     data = {'params': {'deviceId': str(uuid.uuid4()).upper()}}
     resp = session.post('https://prd-api.step.app/analytics/seenLogInView', json=data)
-
-    try:
-        resp.raise_for_status()
-    except Exception:
-        print(resp.request.headers)
-        print(resp.text)
-        raise
-
+    resp.raise_for_status()
     auth.set_auth(session)
 
     print(f'Watcher started for {EMAIL}')

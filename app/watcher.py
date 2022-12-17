@@ -182,15 +182,11 @@ async def main():
     data = {'params': {'deviceId': hashlib.md5(EMAIL.encode()).hexdigest()}}
     resp = session.post('https://prd-api.step.app/analytics/seenLogInView', json=data)
 
-    try:
-        resp.raise_for_status()
-    except Exception:
-        print(resp.request.headers)
-        print(resp.text)
-        raise
+    if resp.status_code == 403:
+        await bot.send_message(TELEGRAM_CHANNEL_ID, 'Forbidden')
 
+    resp.raise_for_status()
     auth.set_auth(session)
-
     print(f'Watcher started for {EMAIL}')
 
     while True:

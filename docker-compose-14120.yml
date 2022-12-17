@@ -13,6 +13,7 @@ services:
       - .env
     environment:
       - EMAIL=scoots-grassy-0h@icloud.com
+      - LOOTBOXES_ALLOWED=True
 
   agent2:
     image: stepapp-bot
@@ -36,6 +37,7 @@ services:
       - .env
     environment:
       - EMAIL=boxy.crumbs-0e@icloud.com
+      - LOOTBOXES_ALLOWED=True
 
   agent4:
     image: stepapp-bot

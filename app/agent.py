@@ -110,7 +110,7 @@ async def check_sellings(cur_sellings, session, bot):
 
 
 async def reader(channel: aioredis.client.PubSub, session, bot, lock):
-    print(f'Reader started for {EMAIL}, channels: {list(channel.channels.keys())}')
+    print(f'Agent started for {EMAIL}, channels: {list(channel.channels.keys())}')
 
     async def set_cooldown():
         await lock.acquire()
@@ -127,6 +127,7 @@ async def reader(channel: aioredis.client.PubSub, session, bot, lock):
 
                 if lock.locked():
                     # Cooldown...
+                    # TODO: sleep is called?
                     continue
 
                 if message is not None:
@@ -165,14 +166,7 @@ async def main():
 
     data = {'params': {'deviceId': hashlib.md5(EMAIL.encode()).hexdigest()}}
     resp = session.post('https://prd-api.step.app/analytics/seenLogInView', json=data)
-
-    try:
-        resp.raise_for_status()
-    except Exception:
-        print(resp.request.headers)
-        print(resp.text)
-        raise
-
+    resp.raise_for_status()
     auth.set_auth(session)
     lock = asyncio.Lock()
 

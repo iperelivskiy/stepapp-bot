@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import json
 import urllib3
 
@@ -11,6 +12,7 @@ import auth
 
 ENV = Env()
 REDIS_URL = ENV.str('REDIS_URL')
+EMAIL = ENV.str('EMAIL')
 
 
 async def check_shoeboxes(redis, session):
@@ -52,11 +54,16 @@ async def check_shoeboxes(redis, session):
 
 async def main():
     redis = await aioredis.from_url(REDIS_URL, decode_responses=True)
-    session = cloudscraper.create_scraper()
-    data = {'params': {'deviceId': str(uuid.uuid4()).upper()}}
+    session = cloudscraper.create_scraper(browser={
+        'browser': 'chrome',
+        'platform': 'darwin',
+        'mobile': False
+    })
+    data = {'params': {'deviceId': hashlib.md5(EMAIL.encode()).hexdigest()}}
     resp = session.post('https://prd-api.step.app/analytics/seenLogInView', json=data)
     resp.raise_for_status()
     auth.set_auth(session)
+
     await check_shoeboxes(redis, session)
     await redis.close()
 

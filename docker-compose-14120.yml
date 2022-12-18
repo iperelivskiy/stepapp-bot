@@ -25,7 +25,7 @@ services:
       - .env
     environment:
       - EMAIL=corner-biliary0l@icloud.com
-      # - LOOTBOXES_ALLOWED=True
+      - LOOTBOXES_ALLOWED=True
 
   agent3:
     image: stepapp-bot

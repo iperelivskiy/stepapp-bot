@@ -105,10 +105,10 @@ async def check_lootboxes(redis, session, bot, set_aggressive_mode):
     new_items.sort(key=lambda x: x['priceFitfi'])
 
     def is_buyable(item):
-        if item['networkTokenId'] < 300000 and item['priceFitfi'] <= 1500:
+        if item['networkTokenId'] < 100000 and item['priceFitfi'] <= 1000:
             return True
 
-        if item['networkTokenId'] < 350000 and item['priceFitfi'] <= 800:
+        if item['networkTokenId'] < 400000 and item['priceFitfi'] <= 500:
             return True
 
         return False
@@ -120,8 +120,11 @@ async def check_lootboxes(redis, session, bot, set_aggressive_mode):
     def is_monitored(item):
         return item['priceFitfi'] < 3000 and item['networkTokenId'] < 400000
 
+    def emoji(item):
+        return ' \U0001F60D' if is_buyable(item) else ''
+
     monitored_items = list(filter(is_monitored, new_items))
-    message = '\n'.join(f'LB{"!!!" if is_buyable(i) else ""} {decimal.Decimal(i["priceFitfi"])}FI #{i["networkTokenId"]}' for i in monitored_items)
+    message = '\n'.join(f'LB {decimal.Decimal(i["priceFitfi"])}FI #{i["networkTokenId"]}{emoji(i)}' for i in monitored_items)
 
     if message:
         await bot.send_message(TELEGRAM_CHANNEL_ID, f'{message}')

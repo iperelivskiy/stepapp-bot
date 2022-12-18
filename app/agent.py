@@ -93,12 +93,14 @@ async def check_sellings(cur_sellings, session, bot):
         auth.update_auth(session)
         return await check_sellings(cur_sellings, session, bot)
 
+    sellings = 0
+
     try:
         resp.raise_for_status()
-        sellings = len(resp.json()['result']['changes']['dynUsers']['updated'][0]['sneakerSellings']['updated'])
-    except TypeError:
-        # No shoes left for sale
-        sellings = 0
+        sneaker_sellings = resp.json()['result']['changes']['dynUsers']['updated'][0]['sneakerSellings']
+        sellings += len(sneaker_sellings['updated']) if sneaker_sellings else 0
+        lootbox_sellings = resp.json()['result']['changes']['dynUsers']['updated'][0]['lootBoxSellings']
+        sellings += len(lootbox_sellings['updated']) if lootbox_sellings else 0
     except Exception:
         print(resp.text)
         raise

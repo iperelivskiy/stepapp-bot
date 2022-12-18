@@ -105,10 +105,12 @@ async def check_lootboxes(redis, session, bot, set_aggressive_mode):
     new_items.sort(key=lambda x: x['priceFitfi'])
 
     def is_buyable(item):
-        if item['networkTokenId'] < 210000 and item['priceFitfi'] <= 1000:
+        if item['networkTokenId'] < 350000 and item['priceFitfi'] <= 1000:
+            # Edition2 and earlier
             return True
 
         if item['networkTokenId'] < 400000 and item['priceFitfi'] <= 500:
+            # Edition3
             return True
 
         return False

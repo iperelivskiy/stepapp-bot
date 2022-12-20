@@ -109,13 +109,13 @@ async def check_lootboxes(redis, session, bot, set_aggressive_mode):
             # Gen 1-3
             return True
 
-        if item['networkTokenId'] < 350000 and item['priceFitfi'] <= 600:
-            # Edition2 and earlier
-            return True
+        # if item['networkTokenId'] < 350000 and item['priceFitfi'] <= 600:
+        #     # Edition2 and earlier
+        #     return True
 
-        if item['networkTokenId'] < 400000 and item['priceFitfi'] <= 400:
-            # Edition3
-            return True
+        # if item['networkTokenId'] < 400000 and item['priceFitfi'] <= 400:
+        #     # Edition3
+        #     return True
 
         return False
 

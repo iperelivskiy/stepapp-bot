@@ -212,7 +212,7 @@ async def main():
             await asyncio.sleep(0.4)
         else:
             print(f'--- {dt.datetime.now()} calm mode')
-            await asyncio.sleep(random.randint(8, 16) / 10)
+            await asyncio.sleep(random.randint(8, 12) / 10)
 
     await bot.disconnect()
     await redis.close()

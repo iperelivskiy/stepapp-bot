@@ -36,7 +36,11 @@ TYPES = {
 
 async def check_shoeboxes(redis, session, bot, set_aggressive_mode):
     data = {"params":{"skip":0,"sortOrder":"latest","take":10,"network":"avalanche"}}
-    resp = session.post('https://prd-api.step.app/market/selling/shoeBoxes', json=data, timeout=5)
+
+    def request():
+        return session.post('https://prd-api.step.app/market/selling/shoeBoxes', json=data, timeout=5)
+
+    resp = await asyncio.to_thread(request)
 
     if resp.status_code == 401:
         auth.update_auth(session)
@@ -78,7 +82,11 @@ async def check_shoeboxes(redis, session, bot, set_aggressive_mode):
 
 async def check_lootboxes(redis, session, bot, set_aggressive_mode):
     data = {"params":{"skip":0,"force":True,"sortOrder":"latest","take":10,"network":"avalanche"}}
-    resp = session.post('https://prd-api.step.app/market/selling/lootBoxes', json=data, timeout=5)
+
+    def request():
+        return session.post('https://prd-api.step.app/market/selling/lootBoxes', json=data, timeout=5)
+
+    resp = await asyncio.to_thread(request)
 
     if resp.status_code == 401:
         auth.update_auth(session)
@@ -120,7 +128,7 @@ async def check_lootboxes(redis, session, bot, set_aggressive_mode):
         await redis.publish('lootboxes', json.dumps(item))
 
     def is_monitored(item):
-        return item['priceFitfi'] < 3000 and item['networkTokenId'] < 400000
+        return item['priceFitfi'] <= 3000 and item['networkTokenId'] < 400000
 
     def emoji(item):
         return ' \U0001F60D' if is_buyable(item) else ''
@@ -192,28 +200,45 @@ async def main():
 
     resp.raise_for_status()
     auth.set_auth(session)
+
     print(f'Watcher started for {EMAIL}')
 
-    while True:
-        try:
-            await check_shoeboxes(redis, session, bot, set_aggressive_mode)
-        except Exception as e:
-            print('check_shoeboxes', e)
-            break
+    async def check_shoeboxes_loop():
+        while True:
+            try:
+                await check_shoeboxes(redis, session, bot, set_aggressive_mode)
+            except Exception as e:
+                print('check_shoeboxes error', e)
+                break
 
-        try:
-            await check_lootboxes(redis, session, bot, set_aggressive_mode)
-        except Exception as e:
-            print('check_lootboxes', e)
-            break
+            if aggressive_mode.is_set():
+                print(f'--- {dt.datetime.now()} aggressive mode')
+                await asyncio.sleep(0.4)
+            else:
+                print(f'--- {dt.datetime.now()} calm mode')
+                await asyncio.sleep(random.randint(8, 12) / 10)
 
-        if aggressive_mode.is_set():
-            print(f'--- {dt.datetime.now()} aggressive mode')
-            await asyncio.sleep(0.4)
-        else:
-            print(f'--- {dt.datetime.now()} calm mode')
-            await asyncio.sleep(random.randint(8, 12) / 10)
+    async def check_lootboxes_loop():
+        while True:
+            try:
+                await check_lootboxes(redis, session, bot, set_aggressive_mode)
+            except Exception as e:
+                print('check_lootboxes error', e)
+                break
 
+            if aggressive_mode.is_set():
+                print(f'--- {dt.datetime.now()} aggressive mode')
+                await asyncio.sleep(0.4)
+            else:
+                print(f'--- {dt.datetime.now()} calm mode')
+                await asyncio.sleep(random.randint(8, 12) / 10)
+
+    tasks = [
+        asyncio.create_task(check_shoeboxes_loop()),
+        asyncio.create_task(check_lootboxes_loop())
+    ]
+
+    await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
     await bot.disconnect()
     await redis.close()
 

@@ -87,7 +87,10 @@ async def buy_lootbox(item, session, bot, set_cooldown):
 
 
 async def check_sellings(cur_sellings, session, bot):
-    resp = session.post('https://prd-api.step.app/game/1/user/getCurrent', timeout=5)
+    def request():
+        return session.post('https://prd-api.step.app/game/1/user/getCurrent', timeout=5)
+
+    resp = await asyncio.to_thread(request)
 
     if resp.status_code == 401:
         auth.update_auth(session)
@@ -172,7 +175,7 @@ async def main():
     auth.set_auth(session)
     lock = asyncio.Lock()
 
-    async def check_sellings_loop(session, bot):
+    async def check_sellings_loop():
         current_sellings = None
 
         while True:
@@ -184,20 +187,24 @@ async def main():
             print(f'--- {dt.datetime.now()}{["", " cooldown"][lock.locked()]}')
             await asyncio.sleep(random.randint(30, 60))
 
-    check_sellings_loop_task = asyncio.create_task(check_sellings_loop(session, bot))
+    async def reader_loop():
+        async with pubsub as p:
+            channels = [f'shoeboxes:{ast}' for ast in ALLOWED_SHOEBOX_TYPES]
+            channels.append('shoeboxes:any')
 
-    async with pubsub as p:
-        channels = [f'shoeboxes:{ast}' for ast in ALLOWED_SHOEBOX_TYPES]
-        channels.append('shoeboxes:any')
+            if ENV.bool('LOOTBOXES_ALLOWED', False):
+                channels.append('lootboxes')
 
-        if ENV.bool('LOOTBOXES_ALLOWED', False):
-            channels.append('lootboxes')
+            await p.subscribe(*channels)
+            await reader(p, session, bot, lock)
+            await p.unsubscribe(*channels)
 
-        await p.subscribe(*channels)
-        await reader(p, session, bot, lock)
-        await p.unsubscribe(*channels)
+    tasks = [
+        asyncio.create_task(check_sellings_loop()),
+        asyncio.create_task(reader_loop())
+    ]
 
-    check_sellings_loop_task.cancel()
+    await asyncio.wait(tasks, return_when=asyncio.FIRST_EXCEPTION)
     await bot.disconnect()
     await pubsub.close()
     await redis.close()

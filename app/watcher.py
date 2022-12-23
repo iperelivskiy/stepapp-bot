@@ -26,13 +26,18 @@ TELEGRAM_APP_TOKEN = '1a822dccf4c1fe151eceba3cec24958f'
 TELEGRAM_BOT_TOKEN = '5600428438:AAFgSPZWK18FSmzMhAHRoeOBhhiy967hDhU'
 TELEGRAM_CHANNEL_ID = -1001807612189
 
-TYPES = {
+SHOEBOX_TYPES = {
     1: 'Coach',
     2: 'Walker',
     3: 'Hiker',
     4: 'Racer'
 }
 
+LOOTBOX_PRICE_GRID = {
+    210000: 1000,  # Gen 1-3
+    400000: 400,  # Edition 3 and earlier
+    490000: 300  # Edition 4
+}
 
 async def check_shoeboxes(redis, session, bot, set_aggressive_mode):
     data = {"params":{"skip":0,"sortOrder":"latest","take":10,"network":"avalanche"}}
@@ -76,7 +81,7 @@ async def check_shoeboxes(redis, session, bot, set_aggressive_mode):
         if channel_name:
             await redis.publish(channel_name, json.dumps(item))
 
-    message = '\n'.join(f'SB {TYPES[i["staticSneakerTypeId"]]} {decimal.Decimal(i["priceFitfi"])}FI #{i["networkTokenId"]}' for i in new_items)
+    message = '\n'.join(f'SB {SHOEBOX_TYPES[i["staticSneakerTypeId"]]} {decimal.Decimal(i["priceFitfi"])}FI #{i["networkTokenId"]}' for i in new_items)
     await bot.send_message(TELEGRAM_CHANNEL_ID, f'{message}')
 
 
@@ -113,17 +118,9 @@ async def check_lootboxes(redis, session, bot, set_aggressive_mode):
     new_items.sort(key=lambda x: x['priceFitfi'])
 
     def is_buyable(item):
-        if item['networkTokenId'] < 210000 and item['priceFitfi'] <= 1000:
-            # Gen 1-3
-            return True
-
-        if item['networkTokenId'] < 400000 and item['priceFitfi'] <= 400:
-            # Edition3 and earlier
-            return True
-
-        if item['networkTokenId'] < 490000 and item['priceFitfi'] <= 300:
-            # Edition4
-            return True
+        for max_token_id in sorted(LOOTBOX_PRICE_GRID.keys()):
+            if item['networkTokenId'] < max_token_id and item['priceFitfi'] <= LOOTBOX_PRICE_GRID[max_token_id]:
+                return True
 
         return False
 

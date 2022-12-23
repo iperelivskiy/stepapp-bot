@@ -37,7 +37,6 @@ services:
       - .env
     environment:
       - EMAIL=boxy.crumbs-0e@icloud.com
-      # - LOOTBOXES_ALLOWED=True
 
   agent4:
     image: stepapp-bot

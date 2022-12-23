@@ -34,8 +34,9 @@ SHOEBOX_TYPES = {
 }
 
 LOOTBOX_PRICE_GRID = {
-    210000: 1000,  # Gen 1-3
-    400000: 400,  # Edition 3 and earlier
+    210000: 2500,  # Gen 1-3
+    350000: 500,  # Edition 1-2
+    410000: 400,  # Edition 3
     490000: 300  # Edition 4
 }
 
@@ -217,7 +218,7 @@ async def main():
                 await asyncio.sleep(0.4)
             else:
                 print(f'--- {dt.datetime.now()} calm mode')
-                await asyncio.sleep(random.randint(6, 10) / 10)
+                await asyncio.sleep(random.randint(6, 8) / 10)
 
     async def check_lootboxes_loop():
         while True:

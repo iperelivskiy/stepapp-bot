@@ -129,7 +129,7 @@ async def check_lootboxes(redis, session, bot, set_aggressive_mode):
         await redis.publish('lootboxes', json.dumps(item))
 
     def is_monitored(item):
-        return item['priceFitfi'] <= 3000 and item['networkTokenId'] < 400000
+        return item['priceFitfi'] <= 3000 and item['networkTokenId'] < sorted(LOOTBOX_PRICE_GRID.keys())[-1]
 
     def emoji(item):
         return ' \U0001F60D' if is_buyable(item) else ''

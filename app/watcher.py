@@ -233,7 +233,7 @@ async def main():
                 await asyncio.sleep(0.4)
             else:
                 print(f'--- {dt.datetime.now()} calm mode')
-                await asyncio.sleep(random.randint(8, 12) / 10)
+                await asyncio.sleep(random.randint(6, 8) / 10)
 
     tasks = [
         asyncio.create_task(check_shoeboxes_loop()),

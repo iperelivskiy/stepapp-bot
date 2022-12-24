@@ -148,7 +148,7 @@ async def reader(channel: aioredis.client.PubSub, session, bot, lock):
         except asyncio.TimeoutError:
             pass
         finally:
-            await asyncio.sleep(0.02)
+            await asyncio.sleep(0.01)
 
 
 async def main():

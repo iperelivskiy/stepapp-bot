@@ -144,7 +144,7 @@ async def check_lootboxes(redis, session, bot, set_aggressive_mode):
     message = '\n'.join(f'LB {decimal.Decimal(i["priceFitfi"])}FI #{i["networkTokenId"]}{emoji(i)}' for i in monitored_items)
 
     if message:
-        await bot.send_message(TELEGRAM_CHANNEL_ID, f'{message}')
+        asyncio.create_task(bot.send_message(TELEGRAM_CHANNEL_ID, f'{message}'))
 
 
 def get_shoebox_channel_name(item):

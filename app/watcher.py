@@ -125,7 +125,12 @@ async def check_lootboxes(redis, session, bot, set_aggressive_mode):
 
         return False
 
-    for item in filter(is_buyable, new_items):
+    buyable_items = list(filter(is_buyable, new_items))
+
+    if buyable_items:
+        set_aggressive_mode()
+
+    for item in buyable_items:
         item['lootbox'] = True
         await redis.publish('lootboxes', json.dumps(item))
 
@@ -218,7 +223,7 @@ async def main():
                 await asyncio.sleep(0.4)
             else:
                 print(f'--- {dt.datetime.now()} calm mode')
-                await asyncio.sleep(random.randint(10, 15) / 10)
+                await asyncio.sleep(random.randint(10, 20) / 10)
 
     async def check_lootboxes_loop():
         while True:
@@ -233,7 +238,7 @@ async def main():
                 await asyncio.sleep(0.4)
             else:
                 print(f'--- {dt.datetime.now()} calm mode')
-                await asyncio.sleep(random.randint(6, 8) / 10)
+                await asyncio.sleep(random.randint(6, 10) / 10)
 
     tasks = [
         asyncio.create_task(check_shoeboxes_loop()),

@@ -154,7 +154,7 @@ def get_shoebox_channel_name(item):
     3 - Hiker
     4 - Racer
     """
-    if item['priceFitfi'] <= 4000:
+    if item['priceFitfi'] <= 3000:
         return 'shoeboxes:any'
 
     # TODO: limit by some max price

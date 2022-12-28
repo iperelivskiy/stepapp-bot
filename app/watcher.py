@@ -42,6 +42,43 @@ LOOTBOX_PRICE_GRID = {
 }
 
 
+async def main():
+    redis = await aioredis.from_url(REDIS_URL, decode_responses=True)
+
+    telegram_dir = os.path.join(os.path.dirname(__file__), '..', 'telegram')
+    if not os.path.exists(telegram_dir):
+        os.makedirs(telegram_dir)
+
+    bot_session = os.path.join(telegram_dir, f'bot-watcher')
+    client = TelegramClient(bot_session, TELEGRAM_APP_ID, TELEGRAM_APP_TOKEN)
+    bot = await client.start(bot_token=TELEGRAM_BOT_TOKEN)
+    session = cloudscraper.create_scraper(browser={
+        'browser': 'chrome',
+        'platform': 'darwin',
+        'mobile': False
+    })
+
+    data = {'params': {'deviceId': hashlib.md5(EMAIL.encode()).hexdigest()}}
+    resp = session.post('https://prd-api.step.app/analytics/seenLogInView', json=data)
+
+    if resp.status_code == 403:
+        await bot.send_message(TELEGRAM_CHANNEL_ID, 'Forbidden')
+
+    resp.raise_for_status()
+    auth.set_auth(session)
+
+    tasks = [
+        asyncio.create_task(check_shoeboxes_loop(redis, session, bot)),
+        asyncio.create_task(check_lootboxes_loop(redis, session, bot))
+    ]
+
+    print(f'Watcher started for {EMAIL}')
+
+    await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+    await bot.disconnect()
+    await redis.close()
+
+
 async def check_shoeboxes_loop(redis, session, bot):
     aggressive_mode, set_aggressive_mode = _setup_aggressive_mode()
 
@@ -54,7 +91,7 @@ async def check_shoeboxes_loop(redis, session, bot):
 
         if aggressive_mode.is_set():
             print(f'--- {dt.datetime.now()} aggressive mode')
-            await asyncio.sleep(0.4)
+            await asyncio.sleep(0.25)
         else:
             print(f'--- {dt.datetime.now()} calm mode')
             await asyncio.sleep(random.randint(10, 20) / 10)
@@ -72,7 +109,7 @@ async def check_lootboxes_loop(redis, session, bot):
 
         if aggressive_mode.is_set():
             print(f'--- {dt.datetime.now()} aggressive mode')
-            await asyncio.sleep(0.4)
+            await asyncio.sleep(0.25)
         else:
             print(f'--- {dt.datetime.now()} calm mode')
             await asyncio.sleep(random.randint(6, 12) / 10)
@@ -228,50 +265,13 @@ def _setup_aggressive_mode():
             task.cancel()
 
         aggressive_mode.set()
-        unset_aggresive_mode_tasks[:] = asyncio.create_task(unset_aggresive_mode())
+        unset_aggresive_mode_tasks[:] = [asyncio.create_task(unset_aggresive_mode())]
 
     async def unset_aggresive_mode():
         await asyncio.sleep(60)
         aggressive_mode.clear()
 
     return aggressive_mode, set_aggressive_mode
-
-
-async def main():
-    redis = await aioredis.from_url(REDIS_URL, decode_responses=True)
-
-    telegram_dir = os.path.join(os.path.dirname(__file__), '..', 'telegram')
-    if not os.path.exists(telegram_dir):
-        os.makedirs(telegram_dir)
-
-    bot_session = os.path.join(telegram_dir, f'bot-watcher')
-    client = TelegramClient(bot_session, TELEGRAM_APP_ID, TELEGRAM_APP_TOKEN)
-    bot = await client.start(bot_token=TELEGRAM_BOT_TOKEN)
-    session = cloudscraper.create_scraper(browser={
-        'browser': 'chrome',
-        'platform': 'darwin',
-        'mobile': False
-    })
-
-    data = {'params': {'deviceId': hashlib.md5(EMAIL.encode()).hexdigest()}}
-    resp = session.post('https://prd-api.step.app/analytics/seenLogInView', json=data)
-
-    if resp.status_code == 403:
-        await bot.send_message(TELEGRAM_CHANNEL_ID, 'Forbidden')
-
-    resp.raise_for_status()
-    auth.set_auth(session)
-
-    tasks = [
-        asyncio.create_task(check_shoeboxes_loop(redis, session, bot)),
-        asyncio.create_task(check_lootboxes_loop(redis, session, bot))
-    ]
-
-    print(f'Watcher started for {EMAIL}')
-
-    await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-    await bot.disconnect()
-    await redis.close()
 
 
 if __name__ == '__main__':

@@ -41,6 +41,43 @@ LOOTBOX_PRICE_GRID = {
     550000: 200,  # Ed 5
 }
 
+
+async def check_shoeboxes_loop(redis, session, bot):
+    aggressive_mode, set_aggressive_mode = _setup_aggressive_mode()
+
+    while True:
+        try:
+            await check_shoeboxes(redis, session, bot, set_aggressive_mode)
+        except Exception as e:
+            print('check_shoeboxes error', e)
+            break
+
+        if aggressive_mode.is_set():
+            print(f'--- {dt.datetime.now()} aggressive mode')
+            await asyncio.sleep(0.4)
+        else:
+            print(f'--- {dt.datetime.now()} calm mode')
+            await asyncio.sleep(random.randint(10, 20) / 10)
+
+
+async def check_lootboxes_loop(redis, session, bot):
+    aggressive_mode, set_aggressive_mode = _setup_aggressive_mode()
+
+    while True:
+        try:
+            await check_lootboxes(redis, session, bot, set_aggressive_mode)
+        except Exception as e:
+            print('check_lootboxes error', e)
+            break
+
+        if aggressive_mode.is_set():
+            print(f'--- {dt.datetime.now()} aggressive mode')
+            await asyncio.sleep(0.4)
+        else:
+            print(f'--- {dt.datetime.now()} calm mode')
+            await asyncio.sleep(random.randint(6, 10) / 10)
+
+
 async def check_shoeboxes(redis, session, bot, set_aggressive_mode):
     data = {"params":{"skip":0,"sortOrder":"latest","take":10,"network":"avalanche"}}
 
@@ -74,16 +111,42 @@ async def check_shoeboxes(redis, session, bot, set_aggressive_mode):
     if not new_items:
         return
 
+    def get_channel_name(item):
+        """
+        1 - Coach
+        2 - Walker
+        3 - Hiker
+        4 - Racer
+        """
+        if item['priceFitfi'] <= 3000:
+            # Super price
+            return 'shoeboxes:any'
+
+        # TODO: limit by some max price
+        # if item['staticShoeBoxRarityId'] > 1:
+        #     return 'shoeboxes:any'
+
+        if item['priceFitfi'] > ENV.int(f'MAX_PRICE_{item["staticSneakerTypeId"]}', 0):
+            return None
+
+        return f'shoeboxes:{item["staticSneakerTypeId"]}'
+
+    def is_buyable(item):
+        return bool(get_channel_name(item))
+
     new_items.sort(key=lambda x: x['priceFitfi'])
+    buyable_items = list(filter(is_buyable, new_items))
 
-    # set_aggressive_mode()
+    if buyable_items:
+        set_aggressive_mode()
 
-    for item in new_items:
-        channel_name = get_shoebox_channel_name(item)
-        if channel_name:
-            await redis.publish(channel_name, json.dumps(item))
+    for item, channel_name in zip(buyable_items, map(get_channel_name, buyable_items)):
+        await redis.publish(channel_name, json.dumps(item))
 
-    message = '\n'.join(f'SB {SHOEBOX_TYPES[i["staticSneakerTypeId"]]} {decimal.Decimal(i["priceFitfi"])}FI #{i["networkTokenId"]}' for i in new_items)
+    message = '\n'.join(
+        f'SB {SHOEBOX_TYPES[i["staticSneakerTypeId"]]} {decimal.Decimal(i["priceFitfi"])}FI #{i["networkTokenId"]}'
+        for i in new_items
+    )
 
     if message:
         asyncio.create_task(bot.send_message(TELEGRAM_CHANNEL_ID, f'{message}'))
@@ -119,8 +182,6 @@ async def check_lootboxes(redis, session, bot, set_aggressive_mode):
             await redis.set(f'lootbox:{item["sellingId"]}', json.dumps(item))
             new_items.append(item)
 
-    new_items.sort(key=lambda x: x['priceFitfi'])
-
     def is_buyable(item):
         if item['priceFitfi'] <= 50:
             # Super price
@@ -132,6 +193,7 @@ async def check_lootboxes(redis, session, bot, set_aggressive_mode):
 
         return False
 
+    new_items.sort(key=lambda x: x['priceFitfi'])
     buyable_items = list(filter(is_buyable, new_items))
 
     if buyable_items:
@@ -148,31 +210,31 @@ async def check_lootboxes(redis, session, bot, set_aggressive_mode):
         return ' \U0001F60D' if is_buyable(item) else ''
 
     monitored_items = list(filter(is_monitored, new_items))
-    message = '\n'.join(f'LB {decimal.Decimal(i["priceFitfi"])}FI #{i["networkTokenId"]}{emoji(i)}' for i in monitored_items)
+    message = '\n'.join(
+        f'LB {decimal.Decimal(i["priceFitfi"])}FI #{i["networkTokenId"]}{emoji(i)}'
+        for i in monitored_items
+    )
 
     if message:
         asyncio.create_task(bot.send_message(TELEGRAM_CHANNEL_ID, f'{message}'))
 
 
-def get_shoebox_channel_name(item):
-    """
-    1 - Coach
-    2 - Walker
-    3 - Hiker
-    4 - Racer
-    """
-    if item['priceFitfi'] <= 3000:
-        # Super price
-        return 'shoeboxes:any'
+def _setup_aggressive_mode():
+    aggressive_mode = asyncio.Event()
+    unset_aggresive_mode_tasks = []
 
-    # TODO: limit by some max price
-    # if item['staticShoeBoxRarityId'] > 1:
-    #     return 'shoeboxes:any'
+    def set_aggressive_mode():
+        for task in unset_aggresive_mode_tasks:
+            task.cancel()
 
-    if item['priceFitfi'] > ENV.int(f'MAX_PRICE_{item["staticSneakerTypeId"]}', 0):
-        return None
+        aggressive_mode.set()
+        unset_aggresive_mode_tasks[:] = asyncio.create_task(unset_aggresive_mode())
 
-    return f'shoeboxes:{item["staticSneakerTypeId"]}'
+    async def unset_aggresive_mode():
+        await asyncio.sleep(60)
+        aggressive_mode.clear()
+
+    return aggressive_mode, set_aggressive_mode
 
 
 async def main():
@@ -185,22 +247,6 @@ async def main():
     bot_session = os.path.join(telegram_dir, f'bot-watcher')
     client = TelegramClient(bot_session, TELEGRAM_APP_ID, TELEGRAM_APP_TOKEN)
     bot = await client.start(bot_token=TELEGRAM_BOT_TOKEN)
-    aggressive_mode = asyncio.Event()
-    unset_aggresive_mode_tasks = []
-
-    def set_aggressive_mode():
-        aggressive_mode.set()
-
-        if unset_aggresive_mode_tasks:
-            unset_aggresive_mode_tasks[0].cancel()
-            unset_aggresive_mode_tasks.clear()
-
-        unset_aggresive_mode_tasks.append(asyncio.create_task(unset_aggresive_mode()))
-
-    async def unset_aggresive_mode():
-        await asyncio.sleep(60)
-        aggressive_mode.clear()
-
     session = cloudscraper.create_scraper(browser={
         'browser': 'chrome',
         'platform': 'darwin',
@@ -216,42 +262,12 @@ async def main():
     resp.raise_for_status()
     auth.set_auth(session)
 
-    print(f'Watcher started for {EMAIL}')
-
-    async def check_shoeboxes_loop():
-        while True:
-            try:
-                await check_shoeboxes(redis, session, bot, set_aggressive_mode)
-            except Exception as e:
-                print('check_shoeboxes error', e)
-                break
-
-            if aggressive_mode.is_set():
-                print(f'--- {dt.datetime.now()} aggressive mode')
-                await asyncio.sleep(0.4)
-            else:
-                print(f'--- {dt.datetime.now()} calm mode')
-                await asyncio.sleep(random.randint(10, 20) / 10)
-
-    async def check_lootboxes_loop():
-        while True:
-            try:
-                await check_lootboxes(redis, session, bot, set_aggressive_mode)
-            except Exception as e:
-                print('check_lootboxes error', e)
-                break
-
-            if aggressive_mode.is_set():
-                print(f'--- {dt.datetime.now()} aggressive mode')
-                await asyncio.sleep(0.4)
-            else:
-                print(f'--- {dt.datetime.now()} calm mode')
-                await asyncio.sleep(random.randint(6, 10) / 10)
-
     tasks = [
-        asyncio.create_task(check_shoeboxes_loop()),
-        asyncio.create_task(check_lootboxes_loop())
+        asyncio.create_task(check_shoeboxes_loop(redis, session, bot)),
+        asyncio.create_task(check_lootboxes_loop(redis, session, bot))
     ]
+
+    print(f'Watcher started for {EMAIL}')
 
     await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
     await bot.disconnect()

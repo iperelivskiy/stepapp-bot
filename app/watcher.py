@@ -75,7 +75,7 @@ async def check_lootboxes_loop(redis, session, bot):
             await asyncio.sleep(0.4)
         else:
             print(f'--- {dt.datetime.now()} calm mode')
-            await asyncio.sleep(random.randint(6, 10) / 10)
+            await asyncio.sleep(random.randint(6, 12) / 10)
 
 
 async def check_shoeboxes(redis, session, bot, set_aggressive_mode):

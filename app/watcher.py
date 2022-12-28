@@ -84,7 +84,9 @@ async def check_shoeboxes(redis, session, bot, set_aggressive_mode):
             await redis.publish(channel_name, json.dumps(item))
 
     message = '\n'.join(f'SB {SHOEBOX_TYPES[i["staticSneakerTypeId"]]} {decimal.Decimal(i["priceFitfi"])}FI #{i["networkTokenId"]}' for i in new_items)
-    await bot.send_message(TELEGRAM_CHANNEL_ID, f'{message}')
+
+    if message:
+        asyncio.create_task(bot.send_message(TELEGRAM_CHANNEL_ID, f'{message}'))
 
 
 async def check_lootboxes(redis, session, bot, set_aggressive_mode):

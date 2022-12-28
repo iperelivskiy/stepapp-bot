@@ -122,6 +122,10 @@ async def check_lootboxes(redis, session, bot, set_aggressive_mode):
     new_items.sort(key=lambda x: x['priceFitfi'])
 
     def is_buyable(item):
+        if item['priceFitfi'] <= 50:
+            # Super price
+            return True
+
         for max_token_id in sorted(LOOTBOX_PRICE_GRID.keys()):
             if item['networkTokenId'] < max_token_id and item['priceFitfi'] <= LOOTBOX_PRICE_GRID[max_token_id]:
                 return True
@@ -158,6 +162,7 @@ def get_shoebox_channel_name(item):
     4 - Racer
     """
     if item['priceFitfi'] <= 3000:
+        # Super price
         return 'shoeboxes:any'
 
     # TODO: limit by some max price

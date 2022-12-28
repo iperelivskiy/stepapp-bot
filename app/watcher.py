@@ -35,9 +35,10 @@ SHOEBOX_TYPES = {
 
 LOOTBOX_PRICE_GRID = {
     210000: 2500,  # Gen 1-3
-    350000: 600,  # Edition 1-2
-    410000: 450,  # Edition 3
-    490000: 300  # Edition 4
+    350000: 600,  # Ed 1-2
+    410000: 450,  # Ed 3
+    490000: 300,  # Ed 4
+    550000: 200,  # Ed 5
 }
 
 async def check_shoeboxes(redis, session, bot, set_aggressive_mode):

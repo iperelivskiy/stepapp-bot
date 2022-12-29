@@ -24,7 +24,7 @@ EMAIL = ENV.str('EMAIL')
 TELEGRAM_APP_ID = 5145344
 TELEGRAM_APP_TOKEN = '1a822dccf4c1fe151eceba3cec24958f'
 TELEGRAM_BOT_TOKEN = '5600428438:AAFgSPZWK18FSmzMhAHRoeOBhhiy967hDhU'
-TELEGRAM_CHANNEL_ID = -1001807612189
+TELEGRAM_MARKET_CHANNEL_ID = -1001807612189
 TELEGRAM_STATE_CHANNEL_ID = -1001696370716
 
 SHOEBOX_TYPES = {
@@ -187,7 +187,7 @@ async def check_shoeboxes(redis, session, tg, set_aggressive_mode):
     )
 
     if message:
-        asyncio.create_task(tg.send_message(TELEGRAM_CHANNEL_ID, f'{message}'))
+        asyncio.create_task(tg.send_message(TELEGRAM_MARKET_CHANNEL_ID, f'{message}'))
 
 
 async def check_lootboxes(redis, session, tg, set_aggressive_mode):
@@ -231,6 +231,9 @@ async def check_lootboxes(redis, session, tg, set_aggressive_mode):
 
         return False
 
+    def emoji(item):
+        return ' \U0001F60D' if is_buyable(item) else ''
+
     new_items.sort(key=lambda x: x['priceFitfi'])
     buyable_items = list(filter(is_buyable, new_items))
 
@@ -241,20 +244,24 @@ async def check_lootboxes(redis, session, tg, set_aggressive_mode):
         item['lootbox'] = True
         await redis.publish('lootboxes', json.dumps(item))
 
-    def is_monitored(item):
-        return item['priceFitfi'] <= 3000 and item['networkTokenId'] < sorted(LOOTBOX_PRICE_GRID.keys())[-1]
-
-    def emoji(item):
-        return ' \U0001F60D' if is_buyable(item) else ''
-
-    monitored_items = list(filter(is_monitored, new_items))
     message = '\n'.join(
         f'LB {decimal.Decimal(i["priceFitfi"])}FI #{i["networkTokenId"]}{emoji(i)}'
-        for i in monitored_items
+        for i in buyable_items
     )
 
     if message:
-        asyncio.create_task(tg.send_message(TELEGRAM_CHANNEL_ID, f'{message}'))
+        asyncio.create_task(tg.send_message(TELEGRAM_STATE_CHANNEL_ID, f'{message}'))
+
+    def is_monitored(item):
+        return item['priceFitfi'] <= 3000 and item['networkTokenId'] < sorted(LOOTBOX_PRICE_GRID.keys())[-1]
+
+    message = '\n'.join(
+        f'LB {decimal.Decimal(i["priceFitfi"])}FI #{i["networkTokenId"]}{emoji(i)}'
+        for i in filter(is_monitored, new_items)
+    )
+
+    if message:
+        asyncio.create_task(tg.send_message(TELEGRAM_MARKET_CHANNEL_ID, f'{message}'))
 
 
 def _setup_aggressive_mode():

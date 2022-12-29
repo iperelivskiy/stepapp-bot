@@ -221,7 +221,7 @@ async def check_lootboxes(redis, session, tg, set_aggressive_mode):
             new_items.append(item)
 
     def is_buyable(item):
-        if item['priceFitfi'] <= 50:
+        if item['priceFitfi'] <= 100:
             # Super price
             return True
 

@@ -79,21 +79,19 @@ async def main():
             await asyncio.sleep(random.randint(20, 40))
 
     async def reader_loop():
+        channels = [f'shoeboxes:{ast}' for ast in ALLOWED_SHOEBOX_TYPES]
+        channels.append('shoeboxes:any')
+
+        if ENV.bool('LOOTBOXES_ALLOWED', False):
+            channels.append('lootboxes')
+
         async with pubsub as p:
-            channels = [f'shoeboxes:{ast}' for ast in ALLOWED_SHOEBOX_TYPES]
-            channels.append('shoeboxes:any')
-
-            if ENV.bool('LOOTBOXES_ALLOWED', False):
-                channels.append('lootboxes')
-
             try:
                 await p.subscribe(*channels)
                 await reader(p, session, bot, lock)
+                await p.unsubscribe(*channels)
             except Exception as e:
                 print('reader error', e)
-                return
-            finally:
-                await p.unsubscribe(*channels)
 
     tasks = [
         asyncio.create_task(check_state_loop()),

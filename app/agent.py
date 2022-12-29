@@ -86,9 +86,14 @@ async def main():
             if ENV.bool('LOOTBOXES_ALLOWED', False):
                 channels.append('lootboxes')
 
-            await p.subscribe(*channels)
-            await reader(p, session, bot, lock)
-            await p.unsubscribe(*channels)
+            try:
+                await p.subscribe(*channels)
+                await reader(p, session, bot, lock)
+            except Exception as e:
+                print('reader error', e)
+                return
+            finally:
+                await p.unsubscribe(*channels)
 
     tasks = [
         asyncio.create_task(check_state_loop()),

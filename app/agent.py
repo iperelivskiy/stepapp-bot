@@ -123,14 +123,6 @@ async def check_state(state, session, tg):
         print(resp.text)
         raise
 
-    sellings = 0
-
-    if data['dynUsers'] and 'updated' in data['dynUsers']:
-        sneaker_sellings = data['dynUsers']['updated'][0]['sneakerSellings']
-        sellings = len(sneaker_sellings['updated']) if sneaker_sellings else 0
-        lootbox_sellings = data['dynUsers']['updated'][0]['lootBoxSellings']
-        sellings += len(lootbox_sellings['updated']) if lootbox_sellings else 0
-
     balance = 0
 
     if data['dynItems'] and 'updated' in data['dynItems']:
@@ -139,18 +131,25 @@ async def check_state(state, session, tg):
                 balance = decimal.Decimal(item['count']) / 1000
                 break
 
+    sellings = 0
+
+    if data['dynUsers'] and 'updated' in data['dynUsers']:
+        sneaker_sellings = data['dynUsers']['updated'][0]['sneakerSellings']
+        sellings = len(sneaker_sellings['updated']) if sneaker_sellings else 0
+        lootbox_sellings = data['dynUsers']['updated'][0]['lootBoxSellings']
+        sellings += len(lootbox_sellings['updated']) if lootbox_sellings else 0
+
     state_changed = any([
-        state['sellings'] is not None and state['sellings'] != sellings,
-        state['balance'] is not None and state['balance'] != balance
+        state['balance'] is not None and state['balance'] != balance,
+        state['sellings'] is not None and state['sellings'] != sellings
     ])
 
     if state_changed:
         asyncio.create_task(
-            tg.send_message(TELEGRAM_STATE_CHANNEL_ID, f'{EMAIL}\nCurrent sellings: {sellings}\nCurrent balance: {balance}')
+            tg.send_message(TELEGRAM_STATE_CHANNEL_ID, f'{EMAIL}\nBalance: {balance}\nSellings: {sellings}')
         )
 
-    state['sellings'] = sellings
-    state['balance'] = balance
+    state.update({'balance': balance, 'sellings': sellings})
 
 
 async def reader(channel: aioredis.client.PubSub, state, session, tg, lock):

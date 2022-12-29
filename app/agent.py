@@ -25,7 +25,7 @@ EMAIL = ENV.str('EMAIL')
 TELEGRAM_APP_ID = 5145344
 TELEGRAM_APP_TOKEN = '1a822dccf4c1fe151eceba3cec24958f'
 TELEGRAM_BOT_TOKEN = '5600428438:AAFgSPZWK18FSmzMhAHRoeOBhhiy967hDhU'
-TELEGRAM_CHANNEL_ID = -1001807612189
+TELEGRAM_STATE_CHANNEL_ID = -1001696370716
 
 ALLOWED_SHOEBOX_TYPES = ENV.list('ALLOWED_SHOEBOXES', [1, 2, 3, 4])
 
@@ -46,9 +46,9 @@ async def main():
     if not os.path.exists(telegram_dir):
         os.makedirs(telegram_dir)
 
-    bot_session = os.path.join(telegram_dir, f'bot-{hashlib.md5(EMAIL.encode()).hexdigest()}')
-    client = TelegramClient(bot_session, TELEGRAM_APP_ID, TELEGRAM_APP_TOKEN)
-    bot = await client.start(bot_token=TELEGRAM_BOT_TOKEN)
+    tg_session = os.path.join(telegram_dir, f'bot-{hashlib.md5(EMAIL.encode()).hexdigest()}')
+    tg_client = TelegramClient(tg_session, TELEGRAM_APP_ID, TELEGRAM_APP_TOKEN)
+    tg = await tg_client.start(bot_token=TELEGRAM_BOT_TOKEN)
 
     session = cloudscraper.create_scraper(browser={
         'browser': 'chrome',
@@ -58,6 +58,10 @@ async def main():
 
     data = {'params': {'deviceId': hashlib.md5(EMAIL.encode()).hexdigest()}}
     resp = session.post('https://prd-api.step.app/analytics/seenLogInView', json=data)
+
+    if resp.status_code == 403:
+        await tg.send_message(TELEGRAM_STATE_CHANNEL_ID, 'Forbidden')
+
     resp.raise_for_status()
     auth.set_auth(session)
     lock = asyncio.Lock()
@@ -70,7 +74,7 @@ async def main():
 
         while True:
             try:
-                await check_state(state, session, bot)
+                await check_state(state, session, tg)
             except Exception as e:
                 print('Check state error:', e)
             else:
@@ -87,7 +91,7 @@ async def main():
         async with pubsub as p:
             try:
                 await p.subscribe(*channels)
-                await reader(p, session, bot, lock)
+                await reader(p, session, tg, lock)
                 await p.unsubscribe(*channels)
             except Exception as e:
                 print('Reader error:', e)
@@ -98,12 +102,12 @@ async def main():
     ]
 
     await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-    await bot.disconnect()
+    await tg.disconnect()
     await pubsub.close()
     await redis.close()
 
 
-async def check_state(state, session, bot):
+async def check_state(state, session, tg):
     def request():
         return session.post('https://prd-api.step.app/game/1/user/getCurrent', timeout=5)
 
@@ -135,13 +139,13 @@ async def check_state(state, session, bot):
 
     if state['sellings'] is not None and state['sellings'] > sellings:
         asyncio.create_task(
-            bot.send_message(TELEGRAM_CHANNEL_ID, f'{EMAIL}\nCurrent sellings: {sellings}\nCurrent balance: {state["balance"]}')
+            tg.send_message(TELEGRAM_STATE_CHANNEL_ID, f'{EMAIL}\nCurrent sellings: {sellings}\nCurrent balance: {state["balance"]}')
         )
 
     state['sellings'] = sellings
 
 
-async def reader(channel: aioredis.client.PubSub, session, bot, lock):
+async def reader(channel: aioredis.client.PubSub, session, tg, lock):
     print(f'Agent started for {EMAIL}, channels: {list(channel.channels.keys())}')
 
     async def set_cooldown():
@@ -169,16 +173,16 @@ async def reader(channel: aioredis.client.PubSub, session, bot, lock):
                         pass
                     else:
                         if item.get('lootbox'):
-                            asyncio.create_task(buy_lootbox(item, session, bot, set_cooldown))
+                            asyncio.create_task(buy_lootbox(item, session, tg, set_cooldown))
                         else:
-                            asyncio.create_task(buy_shoebox(item, session, bot, set_cooldown))
+                            asyncio.create_task(buy_shoebox(item, session, tg, set_cooldown))
         except asyncio.TimeoutError:
             pass
         finally:
             await asyncio.sleep(0.01)
 
 
-async def buy_shoebox(item, session, bot, set_cooldown):
+async def buy_shoebox(item, session, tg, set_cooldown):
 
     def request():
         print(f'BUYING shoebox for {EMAIL}', item)
@@ -200,13 +204,13 @@ async def buy_shoebox(item, session, bot, set_cooldown):
     if success:
         # await set_cooldown()
         asyncio.create_task(
-            bot.send_message(TELEGRAM_CHANNEL_ID, f'{EMAIL}\nBought shoebox {TYPES[item["staticSneakerTypeId"]]} #{item["networkTokenId"]}')
+            tg.send_message(TELEGRAM_STATE_CHANNEL_ID, f'{EMAIL}\nBought shoebox {TYPES[item["staticSneakerTypeId"]]} #{item["networkTokenId"]}')
         )
         # cost_prices = {item['networkTokenId']: item['priceFitfi']}
-        # asyncio.create_task(open_shoeboxes_and_sell(cost_prices, bot))
+        # asyncio.create_task(open_shoeboxes_and_sell(cost_prices, tg))
 
 
-async def buy_lootbox(item, session, bot, set_cooldown):
+async def buy_lootbox(item, session, tg, set_cooldown):
 
     def request():
         print(f'BUYING lootbox for {EMAIL}', item)
@@ -227,7 +231,7 @@ async def buy_lootbox(item, session, bot, set_cooldown):
 
     if success:
         asyncio.create_task(
-            bot.send_message(TELEGRAM_CHANNEL_ID, f'{EMAIL}\nBought lootbox #{item["networkTokenId"]}')
+            tg.send_message(TELEGRAM_STATE_CHANNEL_ID, f'{EMAIL}\nBought lootbox #{item["networkTokenId"]}')
         )
 
 

@@ -25,6 +25,7 @@ TELEGRAM_APP_ID = 5145344
 TELEGRAM_APP_TOKEN = '1a822dccf4c1fe151eceba3cec24958f'
 TELEGRAM_BOT_TOKEN = '5600428438:AAFgSPZWK18FSmzMhAHRoeOBhhiy967hDhU'
 TELEGRAM_CHANNEL_ID = -1001807612189
+TELEGRAM_STATE_CHANNEL_ID = -1001696370716
 
 SHOEBOX_TYPES = {
     1: 'Coach',
@@ -49,9 +50,9 @@ async def main():
     if not os.path.exists(telegram_dir):
         os.makedirs(telegram_dir)
 
-    bot_session = os.path.join(telegram_dir, f'bot-watcher')
-    client = TelegramClient(bot_session, TELEGRAM_APP_ID, TELEGRAM_APP_TOKEN)
-    bot = await client.start(bot_token=TELEGRAM_BOT_TOKEN)
+    tg_session = os.path.join(telegram_dir, f'bot-watcher')
+    tg_client = TelegramClient(tg_session, TELEGRAM_APP_ID, TELEGRAM_APP_TOKEN)
+    tg = await tg_client.start(bot_token=TELEGRAM_BOT_TOKEN)
     session = cloudscraper.create_scraper(browser={
         'browser': 'chrome',
         'platform': 'darwin',
@@ -62,29 +63,29 @@ async def main():
     resp = session.post('https://prd-api.step.app/analytics/seenLogInView', json=data)
 
     if resp.status_code == 403:
-        await bot.send_message(TELEGRAM_CHANNEL_ID, 'Forbidden')
+        await tg.send_message(TELEGRAM_STATE_CHANNEL_ID, 'Forbidden')
 
     resp.raise_for_status()
     auth.set_auth(session)
 
     tasks = [
-        asyncio.create_task(check_shoeboxes_loop(redis, session, bot)),
-        asyncio.create_task(check_lootboxes_loop(redis, session, bot))
+        asyncio.create_task(check_shoeboxes_loop(redis, session, tg)),
+        asyncio.create_task(check_lootboxes_loop(redis, session, tg))
     ]
 
     print(f'Watcher started for {EMAIL}')
 
     await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-    await bot.disconnect()
+    await tg.disconnect()
     await redis.close()
 
 
-async def check_shoeboxes_loop(redis, session, bot):
+async def check_shoeboxes_loop(redis, session, tg):
     aggressive_mode, set_aggressive_mode = _setup_aggressive_mode()
 
     while True:
         try:
-            await check_shoeboxes(redis, session, bot, set_aggressive_mode)
+            await check_shoeboxes(redis, session, tg, set_aggressive_mode)
         except Exception as e:
             print('check_shoeboxes error', e)
             break
@@ -97,12 +98,12 @@ async def check_shoeboxes_loop(redis, session, bot):
             await asyncio.sleep(random.randint(10, 20) / 10)
 
 
-async def check_lootboxes_loop(redis, session, bot):
+async def check_lootboxes_loop(redis, session, tg):
     aggressive_mode, set_aggressive_mode = _setup_aggressive_mode()
 
     while True:
         try:
-            await check_lootboxes(redis, session, bot, set_aggressive_mode)
+            await check_lootboxes(redis, session, tg, set_aggressive_mode)
         except Exception as e:
             print('check_lootboxes error', e)
             break
@@ -115,7 +116,7 @@ async def check_lootboxes_loop(redis, session, bot):
             await asyncio.sleep(random.randint(5, 10) / 10)
 
 
-async def check_shoeboxes(redis, session, bot, set_aggressive_mode):
+async def check_shoeboxes(redis, session, tg, set_aggressive_mode):
     data = {"params":{"skip":0,"sortOrder":"latest","take":10,"network":"avalanche"}}
 
     def request():
@@ -186,10 +187,10 @@ async def check_shoeboxes(redis, session, bot, set_aggressive_mode):
     )
 
     if message:
-        asyncio.create_task(bot.send_message(TELEGRAM_CHANNEL_ID, f'{message}'))
+        asyncio.create_task(tg.send_message(TELEGRAM_CHANNEL_ID, f'{message}'))
 
 
-async def check_lootboxes(redis, session, bot, set_aggressive_mode):
+async def check_lootboxes(redis, session, tg, set_aggressive_mode):
     data = {"params":{"skip":0,"force":True,"sortOrder":"latest","take":10,"network":"avalanche"}}
 
     def request():
@@ -253,7 +254,7 @@ async def check_lootboxes(redis, session, bot, set_aggressive_mode):
     )
 
     if message:
-        asyncio.create_task(bot.send_message(TELEGRAM_CHANNEL_ID, f'{message}'))
+        asyncio.create_task(tg.send_message(TELEGRAM_CHANNEL_ID, f'{message}'))
 
 
 def _setup_aggressive_mode():

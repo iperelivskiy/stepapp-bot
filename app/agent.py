@@ -146,7 +146,7 @@ async def check_state(state, session, tg):
 
     if state_changed:
         asyncio.create_task(
-            tg.send_message(TELEGRAM_STATE_CHANNEL_ID, f'{EMAIL}\nCurrent sellings: {sellings}\nCurrent balance: {state["balance"]}')
+            tg.send_message(TELEGRAM_STATE_CHANNEL_ID, f'{EMAIL}\nCurrent sellings: {sellings}\nCurrent balance: {balance}')
         )
 
     state['sellings'] = sellings

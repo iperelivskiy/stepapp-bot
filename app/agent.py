@@ -72,11 +72,10 @@ async def main():
             try:
                 await check_state(state, session, bot)
             except Exception as e:
-                print('check_state', e)
-                return
-
-            print(f'--- {dt.datetime.now()}{["", " cooldown"][lock.locked()]}')
-            await asyncio.sleep(random.randint(20, 40))
+                print('Check state error:', e)
+            else:
+                print(f'--- {dt.datetime.now()}{["", " cooldown"][lock.locked()]}')
+                await asyncio.sleep(random.randint(20, 40))
 
     async def reader_loop():
         channels = [f'shoeboxes:{ast}' for ast in ALLOWED_SHOEBOX_TYPES]
@@ -91,7 +90,7 @@ async def main():
                 await reader(p, session, bot, lock)
                 await p.unsubscribe(*channels)
             except Exception as e:
-                print('reader error', e)
+                print('Reader error:', e)
 
     tasks = [
         asyncio.create_task(check_state_loop()),

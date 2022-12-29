@@ -123,20 +123,21 @@ async def check_state(state, session, tg):
         print(resp.text)
         raise
 
+    sellings = 0
+
     if data['dynUsers'] and 'updated' in data['dynUsers']:
         sneaker_sellings = data['dynUsers']['updated'][0]['sneakerSellings']
         sellings = len(sneaker_sellings['updated']) if sneaker_sellings else 0
         lootbox_sellings = data['dynUsers']['updated'][0]['lootBoxSellings']
         sellings += len(lootbox_sellings['updated']) if lootbox_sellings else 0
-    else:
-        sellings = 0
+
+    balance = 0
 
     if data['dynItems'] and 'updated' in data['dynItems']:
         for item in data['dynItems']['updated']:
             if item.get('staticItemId') == 100519998:
                 balance = decimal.Decimal(item['count']) / 1000
-    else:
-        balance = 0
+                break
 
     state_changed = any([
         state['sellings'] is not None and state['sellings'] != sellings,

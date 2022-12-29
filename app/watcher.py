@@ -125,7 +125,7 @@ async def check_shoeboxes(redis, session, bot, set_aggressive_mode):
 
     if resp.status_code == 401:
         auth.update_auth(session)
-        return
+        resp = await asyncio.to_thread(request)
 
     try:
         resp.raise_for_status()
@@ -199,7 +199,7 @@ async def check_lootboxes(redis, session, bot, set_aggressive_mode):
 
     if resp.status_code == 401:
         auth.update_auth(session)
-        return
+        resp = await asyncio.to_thread(request)
 
     try:
         resp.raise_for_status()

@@ -38,57 +38,67 @@ TYPES = {
 }
 
 
-async def buy_shoebox(item, session, bot, set_cooldown):
+async def main():
+    redis = await aioredis.from_url(REDIS_URL, decode_responses=True)
+    pubsub = redis.pubsub()
 
-    def request():
-        print(f'BUYING shoebox for {EMAIL}', item)
-        data = {'params': {'sellingId': item['sellingId']}}
-        resp = None
+    telegram_dir = os.path.join(os.path.dirname(__file__), '..', 'telegram')
+    if not os.path.exists(telegram_dir):
+        os.makedirs(telegram_dir)
 
-        try:
-            resp = session.post('https://prd-api.step.app/game/1/market/buyShoeBox', json=data)
-            resp.raise_for_status()
-            return True
-        except Exception as e:
-            print(f'BUYING ERROR for {EMAIL}', e)
-        finally:
-            if resp is not None:
-                print(resp.status_code, resp.text)
+    bot_session = os.path.join(telegram_dir, f'bot-{hashlib.md5(EMAIL.encode()).hexdigest()}')
+    client = TelegramClient(bot_session, TELEGRAM_APP_ID, TELEGRAM_APP_TOKEN)
+    bot = await client.start(bot_token=TELEGRAM_BOT_TOKEN)
 
-    success = await asyncio.to_thread(request)
+    session = cloudscraper.create_scraper(browser={
+        'browser': 'chrome',
+        'platform': 'darwin',
+        'mobile': False
+    })
 
-    if success:
-        # await set_cooldown()
-        asyncio.create_task(
-            bot.send_message(TELEGRAM_CHANNEL_ID, f'{EMAIL}\nBought shoebox {TYPES[item["staticSneakerTypeId"]]} #{item["networkTokenId"]}')
-        )
-        # cost_prices = {item['networkTokenId']: item['priceFitfi']}
-        # asyncio.create_task(open_shoeboxes_and_sell(cost_prices, bot))
+    data = {'params': {'deviceId': hashlib.md5(EMAIL.encode()).hexdigest()}}
+    resp = session.post('https://prd-api.step.app/analytics/seenLogInView', json=data)
+    resp.raise_for_status()
+    auth.set_auth(session)
+    lock = asyncio.Lock()
 
+    async def check_state_loop():
+        state = {
+            'sellings': None,
+            'balance': None
+        }
 
-async def buy_lootbox(item, session, bot, set_cooldown):
+        while True:
+            try:
+                await check_state(state, session, bot)
+            except Exception as e:
+                print('check_state', e)
+                return
 
-    def request():
-        print(f'BUYING lootbox for {EMAIL}', item)
-        data = {'params': {'sellingId': item['sellingId']}}
-        resp = None
+            print(f'--- {dt.datetime.now()}{["", " cooldown"][lock.locked()]}')
+            await asyncio.sleep(random.randint(20, 40))
 
-        try:
-            resp = session.post('https://prd-api.step.app/game/1/market/buyLootBox', json=data)
-            resp.raise_for_status()
-            return True
-        except Exception as e:
-            print(f'BUYING ERROR for {EMAIL}', e)
-        finally:
-            if resp is not None:
-                print(resp.status_code, resp.text)
+    async def reader_loop():
+        async with pubsub as p:
+            channels = [f'shoeboxes:{ast}' for ast in ALLOWED_SHOEBOX_TYPES]
+            channels.append('shoeboxes:any')
 
-    success = await asyncio.to_thread(request)
+            if ENV.bool('LOOTBOXES_ALLOWED', False):
+                channels.append('lootboxes')
 
-    if success:
-        asyncio.create_task(
-            bot.send_message(TELEGRAM_CHANNEL_ID, f'{EMAIL}\nBought lootbox #{item["networkTokenId"]}')
-        )
+            await p.subscribe(*channels)
+            await reader(p, session, bot, lock)
+            await p.unsubscribe(*channels)
+
+    tasks = [
+        asyncio.create_task(check_state_loop()),
+        asyncio.create_task(reader_loop())
+    ]
+
+    await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+    await bot.disconnect()
+    await pubsub.close()
+    await redis.close()
 
 
 async def check_state(state, session, bot):
@@ -166,67 +176,57 @@ async def reader(channel: aioredis.client.PubSub, session, bot, lock):
             await asyncio.sleep(0.01)
 
 
-async def main():
-    redis = await aioredis.from_url(REDIS_URL, decode_responses=True)
-    pubsub = redis.pubsub()
+async def buy_shoebox(item, session, bot, set_cooldown):
 
-    telegram_dir = os.path.join(os.path.dirname(__file__), '..', 'telegram')
-    if not os.path.exists(telegram_dir):
-        os.makedirs(telegram_dir)
+    def request():
+        print(f'BUYING shoebox for {EMAIL}', item)
+        data = {'params': {'sellingId': item['sellingId']}}
+        resp = None
 
-    bot_session = os.path.join(telegram_dir, f'bot-{hashlib.md5(EMAIL.encode()).hexdigest()}')
-    client = TelegramClient(bot_session, TELEGRAM_APP_ID, TELEGRAM_APP_TOKEN)
-    bot = await client.start(bot_token=TELEGRAM_BOT_TOKEN)
+        try:
+            resp = session.post('https://prd-api.step.app/game/1/market/buyShoeBox', json=data)
+            resp.raise_for_status()
+            return True
+        except Exception as e:
+            print(f'BUYING ERROR for {EMAIL}', e)
+        finally:
+            if resp is not None:
+                print(resp.status_code, resp.text)
 
-    session = cloudscraper.create_scraper(browser={
-        'browser': 'chrome',
-        'platform': 'darwin',
-        'mobile': False
-    })
+    success = await asyncio.to_thread(request)
 
-    data = {'params': {'deviceId': hashlib.md5(EMAIL.encode()).hexdigest()}}
-    resp = session.post('https://prd-api.step.app/analytics/seenLogInView', json=data)
-    resp.raise_for_status()
-    auth.set_auth(session)
-    lock = asyncio.Lock()
+    if success:
+        # await set_cooldown()
+        asyncio.create_task(
+            bot.send_message(TELEGRAM_CHANNEL_ID, f'{EMAIL}\nBought shoebox {TYPES[item["staticSneakerTypeId"]]} #{item["networkTokenId"]}')
+        )
+        # cost_prices = {item['networkTokenId']: item['priceFitfi']}
+        # asyncio.create_task(open_shoeboxes_and_sell(cost_prices, bot))
 
-    async def check_state_loop():
-        state = {
-            'sellings': None,
-            'balance': None
-        }
 
-        while True:
-            try:
-                await check_state(state, session, bot)
-            except Exception as e:
-                print('check_state', e)
-                return
+async def buy_lootbox(item, session, bot, set_cooldown):
 
-            print(f'--- {dt.datetime.now()}{["", " cooldown"][lock.locked()]}')
-            await asyncio.sleep(random.randint(30, 60))
+    def request():
+        print(f'BUYING lootbox for {EMAIL}', item)
+        data = {'params': {'sellingId': item['sellingId']}}
+        resp = None
 
-    async def reader_loop():
-        async with pubsub as p:
-            channels = [f'shoeboxes:{ast}' for ast in ALLOWED_SHOEBOX_TYPES]
-            channels.append('shoeboxes:any')
+        try:
+            resp = session.post('https://prd-api.step.app/game/1/market/buyLootBox', json=data)
+            resp.raise_for_status()
+            return True
+        except Exception as e:
+            print(f'BUYING ERROR for {EMAIL}', e)
+        finally:
+            if resp is not None:
+                print(resp.status_code, resp.text)
 
-            if ENV.bool('LOOTBOXES_ALLOWED', False):
-                channels.append('lootboxes')
+    success = await asyncio.to_thread(request)
 
-            await p.subscribe(*channels)
-            await reader(p, session, bot, lock)
-            await p.unsubscribe(*channels)
-
-    tasks = [
-        asyncio.create_task(check_state_loop()),
-        asyncio.create_task(reader_loop())
-    ]
-
-    await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-    await bot.disconnect()
-    await pubsub.close()
-    await redis.close()
+    if success:
+        asyncio.create_task(
+            bot.send_message(TELEGRAM_CHANNEL_ID, f'{EMAIL}\nBought lootbox #{item["networkTokenId"]}')
+        )
 
 
 if __name__ == '__main__':

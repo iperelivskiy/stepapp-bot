@@ -65,13 +65,12 @@ async def main():
     resp.raise_for_status()
     auth.set_auth(session)
     lock = asyncio.Lock()
+    state = {
+        'sellings': None,
+        'balance': None
+    }
 
     async def check_state_loop():
-        state = {
-            'sellings': None,
-            'balance': None
-        }
-
         while True:
             try:
                 await check_state(state, session, tg)
@@ -91,7 +90,7 @@ async def main():
         async with pubsub as p:
             try:
                 await p.subscribe(*channels)
-                await reader(p, session, tg, lock)
+                await reader(p, state, session, tg, lock)
                 await p.unsubscribe(*channels)
             except Exception as e:
                 print('Reader error:', e)
@@ -153,7 +152,7 @@ async def check_state(state, session, tg):
     state['balance'] = balance
 
 
-async def reader(channel: aioredis.client.PubSub, session, tg, lock):
+async def reader(channel: aioredis.client.PubSub, state, session, tg, lock):
     print(f'Agent started for {EMAIL}, channels: {list(channel.channels.keys())}')
 
     async def set_cooldown():
@@ -181,16 +180,16 @@ async def reader(channel: aioredis.client.PubSub, session, tg, lock):
                         pass
                     else:
                         if item.get('lootbox'):
-                            asyncio.create_task(buy_lootbox(item, session, tg, set_cooldown))
+                            asyncio.create_task(buy_lootbox(item, state, session, tg, set_cooldown))
                         else:
-                            asyncio.create_task(buy_shoebox(item, session, tg, set_cooldown))
+                            asyncio.create_task(buy_shoebox(item, state, session, tg, set_cooldown))
         except asyncio.TimeoutError:
             pass
         finally:
             await asyncio.sleep(0.01)
 
 
-async def buy_shoebox(item, session, tg, set_cooldown):
+async def buy_shoebox(item, state, session, tg, set_cooldown):
 
     def request():
         print(f'BUYING shoebox for {EMAIL}', item)
@@ -218,7 +217,7 @@ async def buy_shoebox(item, session, tg, set_cooldown):
         # asyncio.create_task(open_shoeboxes_and_sell(cost_prices, tg))
 
 
-async def buy_lootbox(item, session, tg, set_cooldown):
+async def buy_lootbox(item, state, session, tg, set_cooldown):
 
     def request():
         print(f'BUYING lootbox for {EMAIL}', item)
@@ -239,8 +238,8 @@ async def buy_lootbox(item, session, tg, set_cooldown):
 
     if success:
         asyncio.create_task(
-            tg.send_message(TELEGRAM_STATE_CHANNEL_ID, f'{EMAIL}\nBought lootbox #{item["networkTokenId"]}')
-        )
+            tg.send_message(TELEGRAM_STATE_CHANNEL_ID, f'{EMAIL}\nBought lootbox #{item["networkTokenId"]}'))
+        asyncio.create_task(check_state(state, session, tg))
 
 
 if __name__ == '__main__':

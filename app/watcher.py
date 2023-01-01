@@ -37,9 +37,9 @@ SHOEBOX_TYPES = {
 LOOTBOX_PRICE_GRID = {
     150000: 3000,  # Gen 1-2
     210000: 2000,  # Gen 3
-    410000: 600,  # Ed 1-3
-    490000: 450,  # Ed 4
-    550000: 300,  # Ed 5
+    410000: 700,  # Ed 1-3
+    490000: 550,  # Ed 4
+    550000: 400,  # Ed 5
 }
 
 
@@ -221,7 +221,7 @@ async def check_lootboxes(redis, session, tg, set_aggressive_mode):
             new_items.append(item)
 
     def is_buyable(item):
-        if item['priceFitfi'] <= 100:
+        if item['priceFitfi'] <= 200:
             # Super price
             return True
 

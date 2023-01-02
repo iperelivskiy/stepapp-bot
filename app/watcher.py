@@ -95,7 +95,7 @@ async def check_shoeboxes_loop(redis, session, tg):
             await asyncio.sleep(0.2)
         else:
             print(f'--- {dt.datetime.now()} calm mode')
-            await asyncio.sleep(random.randint(10, 15) / 10)
+            await asyncio.sleep(random.randint(6, 12) / 10)
 
 
 async def check_lootboxes_loop(redis, session, tg):
@@ -182,7 +182,18 @@ async def check_shoeboxes(redis, session, tg, set_aggressive_mode):
         await redis.publish(channel_name, json.dumps(item))
 
     message = '\n'.join(
-        f'SB {SHOEBOX_TYPES[i["staticSneakerTypeId"]]} {decimal.Decimal(i["priceFitfi"])}FI #{i["networkTokenId"]}'
+        f'SB {SHOEBOX_TYPES[i["staticSneakerTypeId"]]} {decimal.Decimal(i["priceFitfi"])}FI #{i["networkTokenId"]} \U0001F60D'
+        for i in buyable_items
+    )
+
+    if message:
+        asyncio.create_task(tg.send_message(TELEGRAM_STATE_CHANNEL_ID, f'{message}'))
+
+    def emoji(item):
+        return ' \U0001F60D' if is_buyable(item) else ''
+
+    message = '\n'.join(
+        f'SB {SHOEBOX_TYPES[i["staticSneakerTypeId"]]} {decimal.Decimal(i["priceFitfi"])}FI #{i["networkTokenId"]}{emoji(i)}'
         for i in new_items
     )
 
@@ -231,9 +242,6 @@ async def check_lootboxes(redis, session, tg, set_aggressive_mode):
 
         return False
 
-    def emoji(item):
-        return ' \U0001F60D' if is_buyable(item) else ''
-
     new_items.sort(key=lambda x: x['priceFitfi'])
     buyable_items = list(filter(is_buyable, new_items))
 
@@ -245,7 +253,7 @@ async def check_lootboxes(redis, session, tg, set_aggressive_mode):
         await redis.publish('lootboxes', json.dumps(item))
 
     message = '\n'.join(
-        f'LB {decimal.Decimal(i["priceFitfi"])}FI #{i["networkTokenId"]}{emoji(i)}'
+        f'LB {decimal.Decimal(i["priceFitfi"])}FI #{i["networkTokenId"]} \U0001F60D'
         for i in buyable_items
     )
 
@@ -254,6 +262,9 @@ async def check_lootboxes(redis, session, tg, set_aggressive_mode):
 
     def is_monitored(item):
         return item['priceFitfi'] <= 3000 and item['networkTokenId'] < sorted(LOOTBOX_PRICE_GRID.keys())[-1]
+
+    def emoji(item):
+        return ' \U0001F60D' if is_buyable(item) else ''
 
     message = '\n'.join(
         f'LB {decimal.Decimal(i["priceFitfi"])}FI #{i["networkTokenId"]}{emoji(i)}'

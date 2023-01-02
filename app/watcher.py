@@ -95,7 +95,7 @@ async def check_shoeboxes_loop(redis, session, tg):
             await asyncio.sleep(0.2)
         else:
             print(f'--- {dt.datetime.now()} calm mode')
-            await asyncio.sleep(random.randint(10, 20) / 10)
+            await asyncio.sleep(random.randint(10, 15) / 10)
 
 
 async def check_lootboxes_loop(redis, session, tg):
@@ -113,7 +113,7 @@ async def check_lootboxes_loop(redis, session, tg):
             await asyncio.sleep(0.2)
         else:
             print(f'--- {dt.datetime.now()} calm mode')
-            await asyncio.sleep(random.randint(3, 6) / 10)
+            await asyncio.sleep(random.randint(2, 4) / 10)
 
 
 async def check_shoeboxes(redis, session, tg, set_aggressive_mode):

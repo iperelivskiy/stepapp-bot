@@ -156,7 +156,7 @@ async def check_shoeboxes(redis, session, tg, set_aggressive_mode):
         3 - Hiker
         4 - Racer
         """
-        if item['priceFitfi'] <= 3000:
+        if item['priceFitfi'] <= 5000:
             # Super price
             return 'shoeboxes:any'
 

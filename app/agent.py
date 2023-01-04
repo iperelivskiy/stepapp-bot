@@ -136,6 +136,8 @@ async def check_state(state, session, tg):
     if data['dynUsers'] and 'updated' in data['dynUsers']:
         sneaker_sellings = data['dynUsers']['updated'][0]['sneakerSellings']
         sellings = len(sneaker_sellings['updated']) if sneaker_sellings else 0
+        shoebox_sellings = data['dynUsers']['updated'][0]['shoeBoxSellings']
+        sellings += len(shoebox_sellings['updated']) if shoebox_sellings else 0
         lootbox_sellings = data['dynUsers']['updated'][0]['lootBoxSellings']
         sellings += len(lootbox_sellings['updated']) if lootbox_sellings else 0
 

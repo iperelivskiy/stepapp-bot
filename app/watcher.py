@@ -78,7 +78,6 @@ async def main():
     await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
     await tg.disconnect()
     await redis.close()
-    print('Watcher stopped')
 
 
 async def check_shoeboxes_loop(redis, session, tg):

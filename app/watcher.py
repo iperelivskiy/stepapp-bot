@@ -160,9 +160,8 @@ async def check_shoeboxes(redis, session, tg, set_aggressive_mode):
             # Super price
             return 'shoeboxes:any'
 
-        # TODO: limit by some max price
-        # if item['staticShoeBoxRarityId'] > 1:
-        #     return 'shoeboxes:any'
+        if item['staticShoeBoxRarityId'] > 1 and item['priceFitfi'] <= 30000:
+            return 'shoeboxes:any'
 
         if item['priceFitfi'] > ENV.int(f'MAX_PRICE_{item["staticSneakerTypeId"]}', 0):
             return None

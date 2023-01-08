@@ -101,6 +101,7 @@ async def main():
     ]
 
     await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+    print('After wait')
     await tg.disconnect()
     await pubsub.close()
     await redis.close()

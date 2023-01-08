@@ -36,7 +36,7 @@ SHOEBOX_TYPES = {
 
 LOOTBOX_PRICE_GRID = {
     150000: 3000,  # Gen 1-2
-    210000: 2000,  # Gen 3
+    210000: 2500,  # Gen 3
 
     490000: 600,  # Ed 1-4
 
